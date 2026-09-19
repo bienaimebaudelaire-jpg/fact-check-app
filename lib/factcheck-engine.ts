@@ -77,7 +77,7 @@ export function analyzeClaim(claim: string, evidence: Evidence[]): FactCheckResu
   const confidenceScore = Math.round(Math.max(0, Math.min(100, usable.length ? 25 + Math.min(35, independentCount * 12) + distinctLevels * 8 + recencyAverage * 12 : 0)))
   const breakdown = evidence.map((item) => {
     const impact = Math.round(stanceWeight[item.stance] * sourceWeight[item.sourceLevel] * 18)
-    return { ...item, impact, direction: impact > 0 ? 'hausse' : impact < 0 ? 'baisse' : 'neutre' }
+    return { ...item, impact, direction: (impact > 0 ? 'hausse' : impact < 0 ? 'baisse' : 'neutre') as 'hausse' | 'baisse' | 'neutre' }
   })
   const verdict = classify(reliabilityScore, evidence, hasConflict, independentCount)
   const sourceWord = independentCount > 1 ? `${independentCount} sources indépendantes` : 'source indépendante'
