@@ -14,6 +14,7 @@ export type Evidence = {
   sourceLevel: SourceLevel
   stance: EvidenceStance
   dateChecked: string
+  detail?: string
 }
 
 export type BreakdownItem = Evidence & {
@@ -81,33 +82,40 @@ export function analyzeClaim(claim: string, evidence: Evidence[]): FactCheckResu
   })
   const verdict = classify(reliabilityScore, evidence, hasConflict, independentCount)
   const sourceWord = independentCount > 1 ? `${independentCount} sources indépendantes` : 'source indépendante'
+  const concreteDetails = usable
+    .filter((item) => item.stance !== 'neutral' && item.detail)
+    .sort((a, b) => sourceWeight[b.sourceLevel] - sourceWeight[a.sourceLevel])
+    .map((item) => `${item.sourceName} : ${item.detail}`)
+  const detailText = concreteDetails.length
+    ? ` Éléments concrets retenus — ${concreteDetails.slice(0, 3).join(' | ')}.`
+    : ' Aucun élément technique ou circonstanciel détaillé n’a été renseigné pour ces sources : traiter ce score comme provisoire tant que ce détail manque.'
   const explanation = verdict === 'undetermined'
     ? `L’analyse reste prudente : ${sourceWord} de niveau 1 à 3 ne suffisent pas ou se contredisent au même niveau.`
-    : `Le score de fiabilité reflète l’accord pondéré de ${sourceWord}, en donnant davantage de poids aux sources primaires et récentes.`
+    : `Le score de fiabilité reflète l’accord pondéré de ${sourceWord}, en donnant davantage de poids aux sources primaires et récentes.${detailText}`
   const keywords = [...new Set(claim.toLowerCase().match(/[a-zàâçéèêëîïôûùüÿñæœ]{5,}/gi) ?? [])].slice(0, 5)
   return { reliabilityScore, confidenceScore, verdict, explanation, keywords: keywords.length ? keywords : ['sources', 'contexte', 'vérification'], breakdown }
 }
 
 export const evidenceForDemo: Record<string, Evidence[]> = {
   'éoliennes': [
-    { sourceName: 'Ministère de la Transition écologique', sourceLevel: 1, stance: 'supports', dateChecked: '2026-08-12' },
-    { sourceName: 'ADEME — données énergie', sourceLevel: 2, stance: 'supports', dateChecked: '2026-07-25' },
-    { sourceName: 'INSEE', sourceLevel: 2, stance: 'neutral', dateChecked: '2026-06-30' },
+    { sourceName: 'Ministère de la Transition écologique', sourceLevel: 1, stance: 'supports', dateChecked: '2026-08-12', detail: 'Bilan énergétique national détaillant la production électrique par filière, comparée à la consommation propre des parcs éoliens (fabrication, maintenance, raccordement).' },
+    { sourceName: 'ADEME — données énergie', sourceLevel: 2, stance: 'supports', dateChecked: '2026-07-25', detail: 'Analyse de cycle de vie complète d’une éolienne : le temps de retour énergétique estimé (6 à 12 mois de production) pour compenser sa fabrication et son installation.' },
+    { sourceName: 'INSEE', sourceLevel: 2, stance: 'neutral', dateChecked: '2026-06-30', detail: 'Données de production électrique par source, utilisées en référence neutre pour les comparaisons énergétiques.' },
   ],
   'vaccin': [
-    { sourceName: 'Santé publique France', sourceLevel: 1, stance: 'contradicts', dateChecked: '2026-08-01' },
-    { sourceName: 'OMS — bureau Europe', sourceLevel: 1, stance: 'contradicts', dateChecked: '2026-07-19' },
-    { sourceName: 'Inserm', sourceLevel: 2, stance: 'contradicts', dateChecked: '2026-06-14' },
+    { sourceName: 'Santé publique France', sourceLevel: 1, stance: 'contradicts', dateChecked: '2026-08-01', detail: 'Surveillance épidémiologique nationale ne montrant aucune transmission du virus grippal par les vaccins inactivés ou à sous-unités utilisés en France.' },
+    { sourceName: 'OMS — bureau Europe', sourceLevel: 1, stance: 'contradicts', dateChecked: '2026-07-19', detail: 'Synthèse d’essais cliniques internationaux confirmant que les vaccins grippaux injectables ne contiennent pas de virus vivant capable de provoquer la maladie.' },
+    { sourceName: 'Inserm', sourceLevel: 2, stance: 'contradicts', dateChecked: '2026-06-14', detail: 'Explication du mécanisme immunitaire : les symptômes parfois ressentis après vaccination sont une réponse inflammatoire normale, pas une infection grippale réelle.' },
   ],
   'transport': [
-    { sourceName: 'Ministère des Transports', sourceLevel: 1, stance: 'supports', dateChecked: '2026-04-02' },
-    { sourceName: 'Cour des comptes', sourceLevel: 2, stance: 'contradicts', dateChecked: '2026-03-27' },
-    { sourceName: 'Les Décodeurs', sourceLevel: 3, stance: 'supports', dateChecked: '2026-03-20' },
+    { sourceName: 'Ministère des Transports', sourceLevel: 1, stance: 'supports', dateChecked: '2026-04-02', detail: 'Bilan carbone officiel par mode de transport, montrant le train globalement moins émetteur en moyenne nationale.' },
+    { sourceName: 'Cour des comptes', sourceLevel: 2, stance: 'contradicts', dateChecked: '2026-03-27', detail: 'Rapport soulignant que cet écart varie fortement selon le taux de remplissage des trains et la source d’électricité du pays (nucléaire vs charbon).' },
+    { sourceName: 'Les Décodeurs', sourceLevel: 3, stance: 'supports', dateChecked: '2026-03-20', detail: 'Analyse comparative confirmant l’avantage moyen du rail, tout en nuançant selon les trajets courts où le covoiturage rivalise.' },
   ],
   'lune': [
-    { sourceName: 'NASA — archives Apollo', sourceLevel: 1, stance: 'supports', dateChecked: '2025-11-04' },
-    { sourceName: 'CNES', sourceLevel: 1, stance: 'supports', dateChecked: '2026-01-18' },
-    { sourceName: 'Franceinfo — vérification', sourceLevel: 3, stance: 'supports', dateChecked: '2026-02-12' },
+    { sourceName: 'NASA — archives Apollo', sourceLevel: 1, stance: 'supports', dateChecked: '2025-11-04', detail: 'Photographies, télémétrie de vol et 382 kg d’échantillons lunaires rapportés par les six missions Apollo ayant atterri sur la Lune entre 1969 et 1972 (Apollo 11, 12, 14, 15, 16, 17).' },
+    { sourceName: 'CNES', sourceLevel: 1, stance: 'supports', dateChecked: '2026-01-18', detail: 'Suivi indépendant, encore actif aujourd’hui, des réflecteurs laser déposés sur la Lune par les missions Apollo : des observatoires du monde entier (dont français) mesurent la distance Terre-Lune en y renvoyant un faisceau laser.' },
+    { sourceName: 'Franceinfo — vérification', sourceLevel: 3, stance: 'supports', dateChecked: '2026-02-12', detail: 'Recoupement des images et données orbitales américaines avec le suivi radar indépendant mené par l’URSS à l’époque, alors en pleine rivalité spatiale et sans intérêt à confirmer un succès américain s’il était faux.' },
   ],
 }
 
