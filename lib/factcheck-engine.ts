@@ -49,7 +49,7 @@ function recency(dateChecked: string) {
   return Math.max(0.25, Math.min(1, 1 - age / 730))
 }
 
-function classify(reliability: number, evidence: Evidence[], hasConflict: boolean, independentCount: number): VerdictCode {
+function classify(reliability: number, hasConflict: boolean, independentCount: number): VerdictCode {
   // This guard is intentionally first: insufficient or conflicting high-quality evidence cannot produce a directional verdict.
   if (independentCount < 2 || hasConflict) return 'undetermined'
   if (reliability >= 90) return 'verified'
@@ -80,7 +80,7 @@ export function analyzeClaim(claim: string, evidence: Evidence[]): FactCheckResu
     const impact = Math.round(stanceWeight[item.stance] * sourceWeight[item.sourceLevel] * 18)
     return { ...item, impact, direction: (impact > 0 ? 'hausse' : impact < 0 ? 'baisse' : 'neutre') as 'hausse' | 'baisse' | 'neutre' }
   })
-  const verdict = classify(reliabilityScore, evidence, hasConflict, independentCount)
+  const verdict = classify(reliabilityScore, hasConflict, independentCount)
   const sourceWord = independentCount > 1 ? `${independentCount} sources indépendantes` : 'source indépendante'
   const concreteDetails = usable
     .filter((item) => item.stance !== 'neutral' && item.detail)
