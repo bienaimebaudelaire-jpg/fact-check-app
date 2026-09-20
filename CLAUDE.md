@@ -13,3 +13,13 @@ Notes de discipline pour toute future session de code sur ce repo (inspire des r
 - Ne jamais fabriquer un score, un verdict ou une source qui n'a pas d'element concret derriere (voir `lib/factcheck-engine.ts`, regle `undetermined` explicite).
 - Un changement de design ou de logique = build local (`npm run build`) avant de pousser, quand c'est possible, plutot que de compter sur le build Vercel pour attraper les erreurs de type.
 - Garder les deux jauges (fiabilite / confiance) toujours separees, jamais fusionnees en un seul chiffre.
+
+
+## Revue de code du 2026-09-20 (limitation connue, pas corrigee)
+
+Quand toutes les sources d'une affirmation sont niveau 5 (non verifiables) ou qu'il n'y a
+aucune source, `reliabilityScore` retombe a 50 par defaut (neutre mathematique), alors meme
+que le verdict est `undetermined`. Un utilisateur qui lit vite peut interpreter "50%" comme
+une vraie mesure plutot que comme l'absence de mesure. L'explication textuelle le clarifie
+deja, mais si ce cas devient frequent en usage reel, envisager de masquer la jauge de
+fiabilite (pas juste l'expliquer) quand le verdict est `undetermined`.
