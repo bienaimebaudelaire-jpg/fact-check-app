@@ -6,18 +6,131 @@ import { Button } from '@/components/ui/button'
 import { analyzeClaim, formatLevel, formatStance, type FactCheckResult, type Evidence, VERDICTS } from '@/lib/factcheck-engine'
 
 function Gauge({ label, score, color, icon: Icon, note }: { label: string; score: number; color: string; icon: typeof ShieldCheck; note: string }) {
-  return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_30px_-22px_rgba(15,23,42,.4)]"><div className="mb-5 flex items-center gap-2 text-sm font-semibold text-slate-700"><Icon size={17} style={{ color }} />{label}<span className="ml-auto text-xs font-medium text-slate-400">/ 100</span></div><div className="flex items-end gap-3"><div className="h-3 flex-1 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, backgroundColor: color }} /></div><strong className="text-2xl tracking-tight text-slate-900">{score}%</strong></div><p className="mt-3 text-xs leading-relaxed text-slate-500">{note}</p></div>
+  return (
+    <div className="border border-[var(--paper-line)] bg-[#f7f5ec] p-5">
+      <div className="mb-5 flex items-center gap-2 text-sm font-semibold text-ink">
+        <Icon size={16} style={{ color }} />
+        {label}
+        <span className="font-mono-data ml-auto text-[11px] font-normal text-ink-soft">/ 100</span>
+      </div>
+      <div className="flex items-end gap-3">
+        <div className="h-2 flex-1 overflow-hidden bg-[var(--paper-line)]">
+          <div className="h-full transition-all duration-700" style={{ width: `${score}%`, backgroundColor: color }} />
+        </div>
+        <strong className="font-mono-data text-2xl tracking-tight text-ink">{score}%</strong>
+      </div>
+      <p className="mt-3 text-xs leading-relaxed text-ink-soft">{note}</p>
+    </div>
+  )
+}
+
+function VerdictStamp({ label, color }: { label: string; color: string }) {
+  return (
+    <div className="stamp inline-block font-display text-sm font-semibold uppercase" style={{ color, opacity: 0.92 }}>
+      {label}
+    </div>
+  )
 }
 
 export function Results({ result, evidence, claim }: { result: FactCheckResult; evidence: Evidence[]; claim: string }) {
   const [details, setDetails] = useState(false)
   const verdict = VERDICTS[result.verdict]
-  return <section id="resultats" className="space-y-5" aria-live="polite"><div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_16px_50px_-28px_rgba(15,23,42,.35)] sm:p-8"><div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between"><div><p className="mb-2 text-xs font-bold uppercase tracking-[.18em] text-slate-400">Résultat de l’analyse</p><h2 className="text-2xl font-semibold tracking-tight text-slate-950">{claim}</h2></div><span className="w-fit rounded-full px-4 py-2 text-sm font-semibold" style={{ color: verdict.color, backgroundColor: `${verdict.color}18` }}>{verdict.label}</span></div><p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600">{verdict.description} {result.explanation}</p><div className="mt-7 grid gap-4 sm:grid-cols-2"><Gauge label="Fiabilité" score={result.reliabilityScore} color="#2c7a68" icon={ShieldCheck} note="À quel point l’affirmation semble vraie selon les éléments trouvés." /><Gauge label="Confiance de l’analyse" score={result.confidenceScore} color="#4676b8" icon={Sparkles} note="À quel point le système est certain de son analyse, indépendamment du verdict." /></div><div className="mt-6 flex flex-wrap gap-2">{result.keywords.map((keyword) => <span key={keyword} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">{keyword}</span>)}</div></div><div className="overflow-hidden rounded-2xl border border-slate-200 bg-white"><button type="button" onClick={() => setDetails(!details)} className="flex w-full items-center justify-between p-5 text-left text-sm font-semibold text-slate-800"><span>Voir le détail des sources ({evidence.length})</span><ChevronDown size={18} className={`text-slate-400 transition-transform ${details ? 'rotate-180' : ''}`} /></button>{details && <div className="overflow-x-auto border-t border-slate-100"><table className="w-full min-w-[620px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-400"><tr><th className="px-5 py-3 font-medium">Source</th><th className="px-5 py-3 font-medium">Niveau</th><th className="px-5 py-3 font-medium">Position</th><th className="px-5 py-3 font-medium">Impact</th><th className="px-5 py-3 font-medium">Vérifié le</th></tr></thead><tbody className="divide-y divide-slate-100">{result.breakdown.map((item) => <tr key={`${item.sourceName}-${item.dateChecked}`}><td className="px-5 py-4 align-top font-medium text-slate-700"><div>{item.sourceName}</div>{item.detail && <p className="mt-1 max-w-xs text-xs font-normal leading-relaxed text-slate-500">{item.detail}</p>}</td><td className="px-5 py-4 align-top text-slate-500">{formatLevel(item.sourceLevel)}</td><td className={`px-5 py-4 align-top font-medium ${item.stance === 'contradicts' ? 'text-rose-700' : 'text-emerald-700'}`}>{formatStance(item.stance)}</td><td className={`px-5 py-4 align-top font-medium ${item.direction === 'baisse' ? 'text-rose-700' : item.direction === 'hausse' ? 'text-emerald-700' : 'text-slate-500'}`}>{item.direction === 'neutre' ? 'Neutre' : `${item.direction === 'hausse' ? '+' : ''}${item.impact}`}</td><td className="px-5 py-4 align-top text-slate-500">{item.dateChecked}</td></tr>)}</tbody></table></div>}</div><ShareCard result={result} claim={claim} /></section>
+  return (
+    <section id="resultats" className="space-y-5" aria-live="polite">
+      <div className="border border-[var(--paper-line)] bg-[#f7f5ec] p-6 sm:p-8">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="font-mono-data mb-2 text-[11px] uppercase tracking-[.18em] text-ink-soft">Dossier &mdash; resultat de l&rsquo;analyse</p>
+            <h2 className="font-display text-2xl font-semibold tracking-tight text-ink">{claim}</h2>
+          </div>
+          <VerdictStamp label={verdict.label} color={verdict.color} />
+        </div>
+        <p className="mt-5 max-w-2xl text-sm leading-7 text-ink-soft">{verdict.description} {result.explanation}</p>
+        <div className="mt-7 grid gap-4 sm:grid-cols-2">
+          <Gauge label="Fiabilite" score={result.reliabilityScore} color="#1e6b52" icon={ShieldCheck} note="A quel point l&rsquo;affirmation semble vraie selon les elements trouves." />
+          <Gauge label="Confiance de l&rsquo;analyse" score={result.confidenceScore} color="#a9781f" icon={Sparkles} note="A quel point le systeme est certain de son analyse, independamment du verdict." />
+        </div>
+        <div className="mt-6 flex flex-wrap gap-2">{result.keywords.map((keyword) => <span key={keyword} className="font-mono-data border border-[var(--paper-line)] px-3 py-1.5 text-[11px] text-ink-soft">{keyword}</span>)}</div>
+      </div>
+      <div className="overflow-hidden border border-[var(--paper-line)] bg-[#f7f5ec]">
+        <button type="button" onClick={() => setDetails(!details)} className="flex w-full items-center justify-between p-5 text-left text-sm font-semibold text-ink">
+          <span>Voir le detail des sources ({evidence.length})</span>
+          <ChevronDown size={18} className={`text-ink-soft transition-transform ${details ? 'rotate-180' : ''}`} />
+        </button>
+        {details && (
+          <div className="overflow-x-auto border-t border-[var(--paper-line)]">
+            <table className="w-full min-w-[620px] text-left text-sm">
+              <thead className="font-mono-data bg-[#efece2] text-[11px] uppercase tracking-wide text-ink-soft">
+                <tr>
+                  <th className="px-5 py-3 font-medium">Source</th>
+                  <th className="px-5 py-3 font-medium">Niveau</th>
+                  <th className="px-5 py-3 font-medium">Position</th>
+                  <th className="px-5 py-3 font-medium">Impact</th>
+                  <th className="px-5 py-3 font-medium">Verifie le</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--paper-line)]">
+                {result.breakdown.map((item) => (
+                  <tr key={`${item.sourceName}-${item.dateChecked}`}>
+                    <td className="px-5 py-4 align-top font-medium text-ink">
+                      <div>{item.sourceName}</div>
+                      {item.detail && <p className="mt-1 max-w-xs text-xs font-normal leading-relaxed text-ink-soft">{item.detail}</p>}
+                    </td>
+                    <td className="px-5 py-4 align-top text-ink-soft">{formatLevel(item.sourceLevel)}</td>
+                    <td className={`px-5 py-4 align-top font-medium ${item.stance === 'contradicts' ? 'text-[var(--false)]' : 'text-[var(--verified)]'}`}>{formatStance(item.stance)}</td>
+                    <td className={`font-mono-data px-5 py-4 align-top font-medium ${item.direction === 'baisse' ? 'text-[var(--false)]' : item.direction === 'hausse' ? 'text-[var(--verified)]' : 'text-ink-soft'}`}>{item.direction === 'neutre' ? 'Neutre' : `${item.direction === 'hausse' ? '+' : ''}${item.impact}`}</td>
+                    <td className="font-mono-data px-5 py-4 align-top text-ink-soft">{item.dateChecked}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      <ShareCard result={result} claim={claim} />
+    </section>
+  )
 }
 
 function ShareCard({ result, claim }: { result: FactCheckResult; claim: string }) {
   const [copied, setCopied] = useState(false)
   const verdict = VERDICTS[result.verdict]
   const copyLink = async () => { await navigator.clipboard?.writeText(window.location.href); setCopied(true); window.setTimeout(() => setCopied(false), 1800) }
-  return <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6"><div className="mb-4 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-slate-400">Carte de partage</p><h3 className="mt-1 text-lg font-semibold text-slate-900">À partager en toute confiance</h3></div><Button variant="outline" size="sm" onClick={copyLink}><Clipboard size={15} />{copied ? 'Lien copié' : 'Copier le lien'}</Button></div><div className="mx-auto aspect-square max-w-[420px] rounded-[2rem] bg-[#edf5f4] p-7 shadow-inner"><div className="flex h-full flex-col justify-between"><div><div className="flex items-center gap-2 text-sm font-bold text-slate-700"><span className="grid h-7 w-7 place-items-center rounded-lg bg-[#1d6b62] text-xs text-white">FC</span> Fact Check</div><p className="mt-10 line-clamp-4 text-xl font-semibold leading-snug text-slate-900">{claim}</p></div><div><span className="inline-block rounded-full px-3 py-1 text-sm font-semibold" style={{ color: verdict.color, backgroundColor: `${verdict.color}20` }}>{verdict.label}</span><div className="mt-5 grid grid-cols-2 gap-3"><div className="rounded-2xl bg-white/75 p-3"><span className="text-[11px] text-slate-500">Fiabilité</span><p className="mt-1 text-2xl font-semibold text-[#2c7a68]">{result.reliabilityScore}%</p></div><div className="rounded-2xl bg-white/75 p-3"><span className="text-[11px] text-slate-500">Confiance</span><p className="mt-1 text-2xl font-semibold text-[#4676b8]">{result.confidenceScore}%</p></div></div><p className="mt-5 text-xs text-slate-500">fact-check.app · Voir l’analyse complète <ExternalLink className="ml-1 inline" size={12} /></p></div></div></div></div>
+  return (
+    <div className="border border-[var(--paper-line)] bg-[#e4dfd0] p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <p className="font-mono-data text-[11px] uppercase tracking-[.18em] text-ink-soft">Carte de partage</p>
+          <h3 className="font-display mt-1 text-lg font-semibold text-ink">A partager en toute confiance</h3>
+        </div>
+        <Button variant="outline" size="sm" onClick={copyLink} className="border-ink text-ink hover:bg-ink hover:text-paper">
+          <Clipboard size={15} />{copied ? 'Lien copie' : 'Copier le lien'}
+        </Button>
+      </div>
+      <div className="mx-auto aspect-square max-w-[420px] border-2 border-ink bg-[#f7f5ec] p-7">
+        <div className="flex h-full flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-sm font-bold text-ink">
+              <span className="grid h-7 w-7 place-items-center border-2 border-ink font-mono-data text-xs text-ink">FC</span> Fact Check
+            </div>
+            <p className="font-display mt-10 line-clamp-4 text-xl font-semibold leading-snug text-ink">{claim}</p>
+          </div>
+          <div>
+            <VerdictStamp label={verdict.label} color={verdict.color} />
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="border border-[var(--paper-line)] bg-white/60 p-3">
+                <span className="text-[11px] text-ink-soft">Fiabilite</span>
+                <p className="font-mono-data mt-1 text-2xl font-semibold text-[#1e6b52]">{result.reliabilityScore}%</p>
+              </div>
+              <div className="border border-[var(--paper-line)] bg-white/60 p-3">
+                <span className="text-[11px] text-ink-soft">Confiance</span>
+                <p className="font-mono-data mt-1 text-2xl font-semibold text-[#a9781f]">{result.confidenceScore}%</p>
+              </div>
+            </div>
+            <p className="mt-5 text-xs text-ink-soft">fact-check.app &middot; Voir l&rsquo;analyse complete <ExternalLink className="ml-1 inline" size={12} /></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }

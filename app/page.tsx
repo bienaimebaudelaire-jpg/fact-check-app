@@ -8,10 +8,10 @@ import { Results } from '@/components/fact-check-results'
 import { analyzeClaim, evidenceForClaim, type Evidence, type FactCheckResult } from '@/lib/factcheck-engine'
 
 const examples = [
-  { label: 'Les éoliennes produisent plus d’électricité qu’elles n’en consomment.', text: 'Les éoliennes produisent plus d’électricité qu’elles n’en consomment.' },
-  { label: 'Les vaccins contre la grippe donnent systématiquement la grippe.', text: 'Les vaccins contre la grippe donnent systématiquement la grippe.' },
-  { label: 'Le transport ferroviaire émet toujours moins que la voiture.', text: 'Le transport ferroviaire émet toujours moins que la voiture.' },
-  { label: 'Les humains ont marché sur la Lune.', text: 'Les humains ont marché sur la Lune.' },
+  { label: 'Les eoliennes produisent plus d electricite qu elles n en consomment.', text: 'Les eoliennes produisent plus d electricite qu elles n en consomment.' },
+  { label: 'Les vaccins contre la grippe donnent systematiquement la grippe.', text: 'Les vaccins contre la grippe donnent systematiquement la grippe.' },
+  { label: 'Le transport ferroviaire emet toujours moins que la voiture.', text: 'Le transport ferroviaire emet toujours moins que la voiture.' },
+  { label: 'Les humains ont marche sur la Lune.', text: 'Les humains ont marche sur la Lune.' },
 ]
 
 export default function Home() {
@@ -19,6 +19,96 @@ export default function Home() {
   const [result, setResult] = useState<FactCheckResult | null>(null)
   const [evidence, setEvidence] = useState<Evidence[]>([])
   const selectedExample = useMemo(() => examples.find((example) => example.text === claim), [claim])
-  const analyze = () => { const found = evidenceForClaim(claim); setEvidence(found); setResult(analyzeClaim(claim, found)); window.setTimeout(() => document.getElementById('resultats')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) }
-  return <main className="min-h-screen bg-[#f7fafb] text-slate-900"><header className="border-b border-slate-200/80 bg-white/80 backdrop-blur"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 lg:px-8"><div className="flex items-center gap-3"><div className="grid h-9 w-9 place-items-center rounded-xl bg-[#1d6b62] text-xs font-bold text-white">FC</div><span className="font-semibold tracking-tight">Fact Check</span></div><a href="#methodologie" className="text-sm font-medium text-slate-500 hover:text-slate-900">Notre méthode</a></div></header><div className="mx-auto max-w-6xl px-5 pb-20 pt-16 lg:px-8 lg:pt-24"><section className="max-w-3xl"><div className="mb-6 flex items-center gap-2 text-sm font-medium text-[#1d6b62]"><ShieldCheck size={17} /> Une lecture calme des faits</div><h1 className="max-w-2xl text-4xl font-semibold tracking-[-.04em] text-slate-950 sm:text-6xl">Comprendre une affirmation, <span className="text-[#2c7a68]">sans précipitation.</span></h1><p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">Collez une affirmation ou un lien. Fact Check compare les éléments disponibles et sépare la fiabilité de la confiance dans l’analyse.</p><div className="mt-10 rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_20px_70px_-38px_rgba(15,23,42,.35)] sm:p-6"><label htmlFor="claim" className="mb-3 block text-sm font-semibold text-slate-800">Que souhaitez-vous vérifier ?</label><Textarea id="claim" value={claim} onChange={(event) => setClaim(event.target.value)} placeholder="Collez une affirmation, un extrait ou un lien…" className="min-h-32 resize-none border-slate-200 bg-slate-50/70 text-base leading-7 focus-visible:ring-[#2c7a68]" /><div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div className="flex items-center gap-2 text-xs text-slate-400"><Info size={14} /> V1 : analyse de texte, sans recherche web en direct</div><Button onClick={analyze} disabled={!claim.trim()} className="bg-[#1d6b62] text-white hover:bg-[#15554e]"><Search size={16} /> Analyser <ArrowRight size={16} /></Button></div></div></section><section className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white/60 p-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-center"><div className="flex-1"><p className="text-xs font-bold uppercase tracking-[.16em] text-slate-400">Exemple de démonstration</p><p className="mt-1 text-sm text-slate-600">Choisissez un cas illustratif pour voir le parcours complet.</p></div><div className="relative sm:w-[360px]"><select aria-label="Choisir un exemple de démonstration" value={selectedExample?.text ?? ''} onChange={(event) => setClaim(event.target.value)} className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-[#2c7a68]"><option value="">Sélectionner un exemple</option>{examples.map((example) => <option key={example.text} value={example.text}>{example.label}</option>)}</select><ChevronDown size={16} className="pointer-events-none absolute right-3 top-3.5 text-slate-400" /></div></div></section>{result && <div className="mt-12"><Results result={result} evidence={evidence} claim={claim} /></div>}<footer id="methodologie" className="mt-20 border-t border-slate-200 pt-8"><div className="grid gap-6 md:grid-cols-[1fr_2fr]"><div><p className="text-sm font-semibold text-slate-900">Comment ce score est calculé ?</p><p className="mt-2 text-sm leading-6 text-slate-500">Une hiérarchie, deux mesures, pas de raccourci.</p></div><p className="max-w-2xl text-sm leading-7 text-slate-500"><strong className="font-semibold text-slate-700">Officiel &gt; institutionnel &gt; presse établie &gt; fact-checkers tiers &gt; non vérifiable.</strong> La fiabilité mesure la direction des éléments ; la confiance mesure la solidité de l’analyse (nombre, diversité et récence des sources). « Impossible à déterminer » est une issue légitime, jamais un échec.</p></div><div className="mt-8 flex items-center gap-2 text-xs text-slate-400"><Check size={14} className="text-[#2c7a68]" /> Méthode transparente · données de démonstration locales en V1</div></footer></div></main>
+
+  const analyze = () => {
+    const found = evidenceForClaim(claim)
+    setEvidence(found)
+    setResult(analyzeClaim(claim, found))
+    window.setTimeout(() => document.getElementById('resultats')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+  }
+
+  return (
+    <main className="min-h-screen text-ink">
+      <header className="border-b border-[var(--paper-line)]">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 lg:px-8">
+          <div className="flex items-center gap-3">
+            <div className="grid h-9 w-9 place-items-center border-2 border-ink font-mono-data text-xs font-bold text-ink">FC</div>
+            <span className="font-display font-semibold tracking-tight">Fact Check</span>
+          </div>
+          <a href="#methodologie" className="font-mono-data text-xs uppercase tracking-[.14em] text-ink-soft hover:text-ink">Notre methode</a>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-6xl px-5 pb-20 pt-16 lg:px-8 lg:pt-20">
+        <section className="max-w-3xl">
+          <div className="font-mono-data mb-6 flex items-center gap-2 text-xs uppercase tracking-[.14em] text-[var(--verified)]">
+            <ShieldCheck size={15} /> Dossier ouvert &mdash; lecture calme des faits
+          </div>
+          <h1 className="font-display max-w-2xl text-4xl font-semibold leading-[1.08] tracking-tight text-ink sm:text-5xl">
+            Comprendre une affirmation, sans precipitation.
+          </h1>
+          <p className="mt-6 max-w-xl text-lg leading-8 text-ink-soft">
+            Collez une affirmation ou un lien. Fact Check compare les elements disponibles et separe la fiabilite de la confiance dans l&rsquo;analyse.
+          </p>
+
+          <div className="mt-10 border border-[var(--paper-line)] bg-[#f7f5ec] p-4 sm:p-6">
+            <label htmlFor="claim" className="mb-3 block text-sm font-semibold text-ink">Que souhaitez-vous verifier ?</label>
+            <Textarea
+              id="claim"
+              value={claim}
+              onChange={(event) => setClaim(event.target.value)}
+              placeholder="Collez une affirmation, un extrait ou un lien..."
+              className="min-h-32 resize-none border-[var(--paper-line)] bg-white/60 text-base leading-7 focus-visible:ring-ink"
+            />
+            <div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+              <div className="font-mono-data flex items-center gap-2 text-[11px] text-ink-soft">
+                <Info size={13} /> V1 : analyse de texte, sans recherche web en direct
+              </div>
+              <Button onClick={analyze} disabled={!claim.trim()} className="bg-ink text-paper hover:bg-ink/85">
+                <Search size={16} /> Analyser <ArrowRight size={16} />
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-8 border border-dashed border-[var(--paper-line)] p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex-1">
+              <p className="font-mono-data text-[11px] uppercase tracking-[.14em] text-ink-soft">Exemple de demonstration</p>
+              <p className="mt-1 text-sm text-ink-soft">Choisissez un cas illustratif pour voir le parcours complet.</p>
+            </div>
+            <div className="relative sm:w-[360px]">
+              <select
+                aria-label="Choisir un exemple de demonstration"
+                value={selectedExample?.text ?? ''}
+                onChange={(event) => setClaim(event.target.value)}
+                className="w-full appearance-none border border-[var(--paper-line)] bg-white/60 px-4 py-3 pr-10 text-sm text-ink outline-none focus:ring-2 focus:ring-ink"
+              >
+                <option value="">Selectionner un exemple</option>
+                {examples.map((example) => <option key={example.text} value={example.text}>{example.label}</option>)}
+              </select>
+              <ChevronDown size={16} className="pointer-events-none absolute right-3 top-3.5 text-ink-soft" />
+            </div>
+          </div>
+        </section>
+
+        {result && <div className="mt-12"><Results result={result} evidence={evidence} claim={claim} /></div>}
+
+        <footer id="methodologie" className="mt-20 border-t border-[var(--paper-line)] pt-8">
+          <div className="grid gap-6 md:grid-cols-[1fr_2fr]">
+            <div>
+              <p className="text-sm font-semibold text-ink">Comment ce score est calcule ?</p>
+              <p className="mt-2 text-sm leading-6 text-ink-soft">Une hierarchie, deux mesures, pas de raccourci.</p>
+            </div>
+            <p className="max-w-2xl text-sm leading-7 text-ink-soft">
+              <strong className="font-semibold text-ink">Officiel &gt; institutionnel &gt; presse etablie &gt; fact-checkers tiers &gt; non verifiable.</strong> La fiabilite mesure la direction des elements ; la confiance mesure la solidite de l&rsquo;analyse (nombre, diversite et recence des sources). &laquo; Impossible a determiner &raquo; est une issue legitime, jamais un echec.
+            </p>
+          </div>
+          <div className="font-mono-data mt-8 flex items-center gap-2 text-[11px] text-ink-soft">
+            <Check size={13} className="text-[var(--verified)]" /> Methode transparente &middot; donnees de demonstration locales en V1
+          </div>
+        </footer>
+      </div>
+    </main>
+  )
 }
