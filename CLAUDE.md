@@ -15,11 +15,24 @@ Notes de discipline pour toute future session de code sur ce repo (inspire des r
 - Garder les deux jauges (fiabilite / confiance) toujours separees, jamais fusionnees en un seul chiffre.
 
 
-## Revue de code du 2026-09-20 (limitation connue, pas corrigee)
+## Revue de code du 2026-09-20 (corrigee le 2026-09-22, voir issue #1)
 
 Quand toutes les sources d'une affirmation sont niveau 5 (non verifiables) ou qu'il n'y a
 aucune source, `reliabilityScore` retombe a 50 par defaut (neutre mathematique), alors meme
-que le verdict est `undetermined`. Un utilisateur qui lit vite peut interpreter "50%" comme
-une vraie mesure plutot que comme l'absence de mesure. L'explication textuelle le clarifie
-deja, mais si ce cas devient frequent en usage reel, envisager de masquer la jauge de
-fiabilite (pas juste l'expliquer) quand le verdict est `undetermined`.
+que le verdict est `undetermined`. La jauge de fiabilite est maintenant masquee (pas juste
+expliquee) quand `result.verdict === 'undetermined'`, dans `components/fact-check-results.tsx`
+(carte de resultat et carte de partage) : ne pas reintroduire un affichage de pourcentage brut
+dans ce cas.
+
+## Revue de code du 2026-09-22 (corrigee, voir issue #1)
+
+`evidenceForClaim()` matchait par sous-chaine (`claim.includes(candidate)`), ce qui rattachait
+des preuves fixes a n'importe quel texte contenant un mot-cle — y compris une negation
+(« Les humains n'ont jamais marche sur la Lune » recevait les preuves qui *soutiennent*
+l'alunissage) ou un sujet hors-sujet contenant le mot « vaccin ». La cle `'éoliennes'` accentuee
+ne matchait jamais le texte d'exemple non accentue de `app/page.tsx`. Corrige par une
+correspondance **exacte** apres normalisation (`normalizeClaim` : NFD, minuscules, accents et
+ponctuation retires) contre les 4 exemples de demonstration definis dans
+`lib/factcheck-engine.ts` (`demoClaimExamples`, source unique reutilisee par `app/page.tsx`).
+Toute autre saisie ne declenche plus `analyzeClaim` du tout : voir l'etat « Demo » dans
+`app/page.tsx`. Ne jamais revenir a un matching par sous-chaine ou mot-cle sur `claim`.

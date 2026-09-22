@@ -96,32 +96,77 @@ export function analyzeClaim(claim: string, evidence: Evidence[]): FactCheckResu
   return { reliabilityScore, confidenceScore, verdict, explanation, keywords: keywords.length ? keywords : ['sources', 'contexte', 'vérification'], breakdown }
 }
 
-export const evidenceForDemo: Record<string, Evidence[]> = {
-  'éoliennes': [
-    { sourceName: 'Ministère de la Transition écologique', sourceLevel: 1, stance: 'supports', dateChecked: '2026-08-12', detail: 'Bilan énergétique national détaillant la production électrique par filière, comparée à la consommation propre des parcs éoliens (fabrication, maintenance, raccordement).' },
-    { sourceName: 'ADEME — données énergie', sourceLevel: 2, stance: 'supports', dateChecked: '2026-07-25', detail: 'Analyse de cycle de vie complète d’une éolienne : le temps de retour énergétique estimé (6 à 12 mois de production) pour compenser sa fabrication et son installation.' },
-    { sourceName: 'INSEE', sourceLevel: 2, stance: 'neutral', dateChecked: '2026-06-30', detail: 'Données de production électrique par source, utilisées en référence neutre pour les comparaisons énergétiques.' },
-  ],
-  'vaccin': [
-    { sourceName: 'Santé publique France', sourceLevel: 1, stance: 'contradicts', dateChecked: '2026-08-01', detail: 'Surveillance épidémiologique nationale ne montrant aucune transmission du virus grippal par les vaccins inactivés ou à sous-unités utilisés en France.' },
-    { sourceName: 'OMS — bureau Europe', sourceLevel: 1, stance: 'contradicts', dateChecked: '2026-07-19', detail: 'Synthèse d’essais cliniques internationaux confirmant que les vaccins grippaux injectables ne contiennent pas de virus vivant capable de provoquer la maladie.' },
-    { sourceName: 'Inserm', sourceLevel: 2, stance: 'contradicts', dateChecked: '2026-06-14', detail: 'Explication du mécanisme immunitaire : les symptômes parfois ressentis après vaccination sont une réponse inflammatoire normale, pas une infection grippale réelle.' },
-  ],
-  'transport': [
-    { sourceName: 'Ministère des Transports', sourceLevel: 1, stance: 'supports', dateChecked: '2026-04-02', detail: 'Bilan carbone officiel par mode de transport, montrant le train globalement moins émetteur en moyenne nationale.' },
-    { sourceName: 'Cour des comptes', sourceLevel: 2, stance: 'contradicts', dateChecked: '2026-03-27', detail: 'Rapport soulignant que cet écart varie fortement selon le taux de remplissage des trains et la source d’électricité du pays (nucléaire vs charbon).' },
-    { sourceName: 'Les Décodeurs', sourceLevel: 3, stance: 'supports', dateChecked: '2026-03-20', detail: 'Analyse comparative confirmant l’avantage moyen du rail, tout en nuançant selon les trajets courts où le covoiturage rivalise.' },
-  ],
-  'lune': [
-    { sourceName: 'NASA — archives Apollo', sourceLevel: 1, stance: 'supports', dateChecked: '2025-11-04', detail: 'Photographies, télémétrie de vol et 382 kg d’échantillons lunaires rapportés par les six missions Apollo ayant atterri sur la Lune entre 1969 et 1972 (Apollo 11, 12, 14, 15, 16, 17).' },
-    { sourceName: 'CNES', sourceLevel: 1, stance: 'supports', dateChecked: '2026-01-18', detail: 'Suivi indépendant, encore actif aujourd’hui, des réflecteurs laser déposés sur la Lune par les missions Apollo : des observatoires du monde entier (dont français) mesurent la distance Terre-Lune en y renvoyant un faisceau laser.' },
-    { sourceName: 'Franceinfo — vérification', sourceLevel: 3, stance: 'supports', dateChecked: '2026-02-12', detail: 'Recoupement des images et données orbitales américaines avec le suivi radar indépendant mené par l’URSS à l’époque, alors en pleine rivalité spatiale et sans intérêt à confirmer un succès américain s’il était faux.' },
-  ],
+export type DemoExample = { label: string; text: string; evidence: Evidence[] }
+
+const demoExamples: DemoExample[] = [
+  {
+    label: 'Les éoliennes produisent plus d’électricité qu’elles n’en consomment.',
+    text: 'Les éoliennes produisent plus d’électricité qu’elles n’en consomment.',
+    evidence: [
+      { sourceName: 'Ministère de la Transition écologique', sourceLevel: 1, stance: 'supports', dateChecked: '2026-08-12', detail: 'Bilan énergétique national détaillant la production électrique par filière, comparée à la consommation propre des parcs éoliens (fabrication, maintenance, raccordement).' },
+      { sourceName: 'ADEME — données énergie', sourceLevel: 2, stance: 'supports', dateChecked: '2026-07-25', detail: 'Analyse de cycle de vie complète d’une éolienne : le temps de retour énergétique estimé (6 à 12 mois de production) pour compenser sa fabrication et son installation.' },
+      { sourceName: 'INSEE', sourceLevel: 2, stance: 'neutral', dateChecked: '2026-06-30', detail: 'Données de production électrique par source, utilisées en référence neutre pour les comparaisons énergétiques.' },
+    ],
+  },
+  {
+    label: 'Les vaccins contre la grippe donnent systématiquement la grippe.',
+    text: 'Les vaccins contre la grippe donnent systématiquement la grippe.',
+    evidence: [
+      { sourceName: 'Santé publique France', sourceLevel: 1, stance: 'contradicts', dateChecked: '2026-08-01', detail: 'Surveillance épidémiologique nationale ne montrant aucune transmission du virus grippal par les vaccins inactivés ou à sous-unités utilisés en France.' },
+      { sourceName: 'OMS — bureau Europe', sourceLevel: 1, stance: 'contradicts', dateChecked: '2026-07-19', detail: 'Synthèse d’essais cliniques internationaux confirmant que les vaccins grippaux injectables ne contiennent pas de virus vivant capable de provoquer la maladie.' },
+      { sourceName: 'Inserm', sourceLevel: 2, stance: 'contradicts', dateChecked: '2026-06-14', detail: 'Explication du mécanisme immunitaire : les symptômes parfois ressentis après vaccination sont une réponse inflammatoire normale, pas une infection grippale réelle.' },
+    ],
+  },
+  {
+    label: 'Le transport ferroviaire émet toujours moins que la voiture.',
+    text: 'Le transport ferroviaire émet toujours moins que la voiture.',
+    evidence: [
+      { sourceName: 'Ministère des Transports', sourceLevel: 1, stance: 'supports', dateChecked: '2026-04-02', detail: 'Bilan carbone officiel par mode de transport, montrant le train globalement moins émetteur en moyenne nationale.' },
+      { sourceName: 'Cour des comptes', sourceLevel: 2, stance: 'contradicts', dateChecked: '2026-03-27', detail: 'Rapport soulignant que cet écart varie fortement selon le taux de remplissage des trains et la source d’électricité du pays (nucléaire vs charbon).' },
+      { sourceName: 'Les Décodeurs', sourceLevel: 3, stance: 'supports', dateChecked: '2026-03-20', detail: 'Analyse comparative confirmant l’avantage moyen du rail, tout en nuançant selon les trajets courts où le covoiturage rivalise.' },
+    ],
+  },
+  {
+    label: 'Les humains ont marché sur la Lune.',
+    text: 'Les humains ont marché sur la Lune.',
+    evidence: [
+      { sourceName: 'NASA — archives Apollo', sourceLevel: 1, stance: 'supports', dateChecked: '2025-11-04', detail: 'Photographies, télémétrie de vol et 382 kg d’échantillons lunaires rapportés par les six missions Apollo ayant atterri sur la Lune entre 1969 et 1972 (Apollo 11, 12, 14, 15, 16, 17).' },
+      { sourceName: 'CNES', sourceLevel: 1, stance: 'supports', dateChecked: '2026-01-18', detail: 'Suivi indépendant, encore actif aujourd’hui, des réflecteurs laser déposés sur la Lune par les missions Apollo : des observatoires du monde entier (dont français) mesurent la distance Terre-Lune en y renvoyant un faisceau laser.' },
+      { sourceName: 'Franceinfo — vérification', sourceLevel: 3, stance: 'supports', dateChecked: '2026-02-12', detail: 'Recoupement des images et données orbitales américaines avec le suivi radar indépendant mené par l’URSS à l’époque, alors en pleine rivalité spatiale et sans intérêt à confirmer un succès américain s’il était faux.' },
+    ],
+  },
+]
+
+export const demoClaimExamples: { label: string; text: string }[] = demoExamples.map(({ label, text }) => ({ label, text }))
+
+/**
+ * Normalise un texte pour comparaison : minuscules, sans accents (NFD),
+ * ponctuation et espaces multiples réduits à un seul espace.
+ */
+export function normalizeClaim(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
 }
 
+function findDemoExample(claim: string): DemoExample | undefined {
+  const normalized = normalizeClaim(claim)
+  return demoExamples.find((example) => normalizeClaim(example.text) === normalized)
+}
+
+// Correspondance exacte uniquement (après normalisation) : tant qu'il n'existe pas de
+// pipeline de sources réel, on ne doit jamais rattacher des preuves à une affirmation
+// qui n'est pas l'un des exemples de démonstration (voir issue #1 — négations et sujets
+// hors-sujet matchaient auparavant par simple sous-chaîne).
 export function evidenceForClaim(claim: string): Evidence[] {
-  const key = Object.keys(evidenceForDemo).find((candidate) => claim.toLowerCase().includes(candidate))
-  return key ? evidenceForDemo[key] : []
+  return findDemoExample(claim)?.evidence ?? []
+}
+
+export function isDemoClaim(claim: string): boolean {
+  return findDemoExample(claim) !== undefined
 }
 
 export function formatStance(stance: EvidenceStance) {
