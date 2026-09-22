@@ -47,7 +47,17 @@ export function Results({ result, evidence, claim }: { result: FactCheckResult; 
         </div>
         <p className="mt-5 max-w-2xl text-sm leading-7 text-ink-soft">{verdict.description} {result.explanation}</p>
         <div className="mt-7 grid gap-4 sm:grid-cols-2">
-          <Gauge label="Fiabilite" score={result.reliabilityScore} color="#1e6b52" icon={ShieldCheck} note="A quel point l&rsquo;affirmation semble vraie selon les elements trouves." />
+          {result.verdict === 'undetermined' ? (
+            <div className="border border-[var(--paper-line)] bg-[#f7f5ec] p-5">
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-ink">
+                <ShieldCheck size={16} style={{ color: '#667085' }} />
+                Fiabilite
+              </div>
+              <p className="text-xs leading-relaxed text-ink-soft">Aucun score n&rsquo;est affiche : le verdict est &laquo; impossible a determiner &raquo;, un chiffre ici laisserait croire a une mesure qui n&rsquo;existe pas.</p>
+            </div>
+          ) : (
+            <Gauge label="Fiabilite" score={result.reliabilityScore} color="#1e6b52" icon={ShieldCheck} note="A quel point l&rsquo;affirmation semble vraie selon les elements trouves." />
+          )}
           <Gauge label="Confiance de l&rsquo;analyse" score={result.confidenceScore} color="#a9781f" icon={Sparkles} note="A quel point le systeme est certain de son analyse, independamment du verdict." />
         </div>
         <div className="mt-6 flex flex-wrap gap-2">{result.keywords.map((keyword) => <span key={keyword} className="font-mono-data border border-[var(--paper-line)] px-3 py-1.5 text-[11px] text-ink-soft">{keyword}</span>)}</div>
@@ -120,7 +130,11 @@ function ShareCard({ result, claim }: { result: FactCheckResult; claim: string }
             <div className="mt-5 grid grid-cols-2 gap-3">
               <div className="border border-[var(--paper-line)] bg-white/60 p-3">
                 <span className="text-[11px] text-ink-soft">Fiabilite</span>
-                <p className="font-mono-data mt-1 text-2xl font-semibold text-[#1e6b52]">{result.reliabilityScore}%</p>
+                {result.verdict === 'undetermined' ? (
+                  <p className="mt-1 text-xs leading-snug text-ink-soft">Non mesurable</p>
+                ) : (
+                  <p className="font-mono-data mt-1 text-2xl font-semibold text-[#1e6b52]">{result.reliabilityScore}%</p>
+                )}
               </div>
               <div className="border border-[var(--paper-line)] bg-white/60 p-3">
                 <span className="text-[11px] text-ink-soft">Confiance</span>

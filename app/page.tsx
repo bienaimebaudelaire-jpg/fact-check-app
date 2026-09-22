@@ -5,23 +5,25 @@ import { ArrowRight, Check, ChevronDown, Info, Search, ShieldCheck } from 'lucid
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Results } from '@/components/fact-check-results'
-import { analyzeClaim, evidenceForClaim, type Evidence, type FactCheckResult } from '@/lib/factcheck-engine'
-
-const examples = [
-  { label: 'Les eoliennes produisent plus d electricite qu elles n en consomment.', text: 'Les eoliennes produisent plus d electricite qu elles n en consomment.' },
-  { label: 'Les vaccins contre la grippe donnent systematiquement la grippe.', text: 'Les vaccins contre la grippe donnent systematiquement la grippe.' },
-  { label: 'Le transport ferroviaire emet toujours moins que la voiture.', text: 'Le transport ferroviaire emet toujours moins que la voiture.' },
-  { label: 'Les humains ont marche sur la Lune.', text: 'Les humains ont marche sur la Lune.' },
-]
+import { analyzeClaim, demoClaimExamples, evidenceForClaim, isDemoClaim, type Evidence, type FactCheckResult } from '@/lib/factcheck-engine'
 
 export default function Home() {
   const [claim, setClaim] = useState('')
   const [result, setResult] = useState<FactCheckResult | null>(null)
   const [evidence, setEvidence] = useState<Evidence[]>([])
-  const selectedExample = useMemo(() => examples.find((example) => example.text === claim), [claim])
+  const [demoNotice, setDemoNotice] = useState(false)
+  const selectedExample = useMemo(() => demoClaimExamples.find((example) => example.text === claim), [claim])
 
   const analyze = () => {
+    if (!isDemoClaim(claim)) {
+      setResult(null)
+      setEvidence([])
+      setDemoNotice(true)
+      window.setTimeout(() => document.getElementById('resultats')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+      return
+    }
     const found = evidenceForClaim(claim)
+    setDemoNotice(false)
     setEvidence(found)
     setResult(analyzeClaim(claim, found))
     window.setTimeout(() => document.getElementById('resultats')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
@@ -48,7 +50,7 @@ export default function Home() {
             Comprendre une affirmation, sans precipitation.
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-ink-soft">
-            Collez une affirmation ou un lien. Fact Check compare les elements disponibles et separe la fiabilite de la confiance dans l&rsquo;analyse.
+            Collez une affirmation. Fact Check compare les elements disponibles et separe la fiabilite de la confiance dans l&rsquo;analyse.
           </p>
 
           <div className="mt-10 border border-[var(--paper-line)] bg-[#f7f5ec] p-4 sm:p-6">
@@ -57,7 +59,7 @@ export default function Home() {
               id="claim"
               value={claim}
               onChange={(event) => setClaim(event.target.value)}
-              placeholder="Collez une affirmation, un extrait ou un lien..."
+              placeholder="Collez une affirmation ou un extrait..."
               className="min-h-32 resize-none border-[var(--paper-line)] bg-white/60 text-base leading-7 focus-visible:ring-ink"
             />
             <div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
@@ -85,7 +87,7 @@ export default function Home() {
                 className="w-full appearance-none border border-[var(--paper-line)] bg-white/60 px-4 py-3 pr-10 text-sm text-ink outline-none focus:ring-2 focus:ring-ink"
               >
                 <option value="">Selectionner un exemple</option>
-                {examples.map((example) => <option key={example.text} value={example.text}>{example.label}</option>)}
+                {demoClaimExamples.map((example) => <option key={example.text} value={example.text}>{example.label}</option>)}
               </select>
               <ChevronDown size={16} className="pointer-events-none absolute right-3 top-3.5 text-ink-soft" />
             </div>
@@ -93,6 +95,13 @@ export default function Home() {
         </section>
 
         {result && <div className="mt-12"><Results result={result} evidence={evidence} claim={claim} /></div>}
+
+        {demoNotice && !result && (
+          <div id="resultats" className="mt-12 border border-dashed border-[var(--paper-line)] bg-[#f7f5ec] p-6 text-sm leading-6 text-ink-soft" aria-live="polite">
+            <p className="font-mono-data mb-2 text-[11px] uppercase tracking-[.14em] text-ink-soft">Démo</p>
+            Seuls les exemples proposés ci-dessus sont analysés pour l&rsquo;instant : aucune source réelle n&rsquo;est encore rattachée aux autres affirmations. Choisissez un exemple pour voir un parcours complet.
+          </div>
+        )}
 
         <footer id="methodologie" className="mt-20 border-t border-[var(--paper-line)] pt-8">
           <div className="grid gap-6 md:grid-cols-[1fr_2fr]">
