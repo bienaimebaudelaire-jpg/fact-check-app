@@ -1,25 +1,25 @@
 # DESIGN.md — fact-check-app
 
 ## Direction
-Identite "dossier d'enquete" : papier, encre, tampon de verdict. Choisi pour eviter le kit
-SaaS generique (cartes arrondies, ombre grise, palette bleu/vert par defaut) et ancrer le
-design dans le sujet (verification, dossier, preuve).
+« La phrase sous examen ». L'affirmation que l'utilisateur colle est traitée comme une citation :
+de grands guillemets français encadrent le champ de saisie, et le résultat la reprend en italique
+entre guillemets. Ton sobre, service public, rassurant : on vérifie calmement, sans alarmisme.
 
 ## Palette
-- `--paper` #efece2 (fond)
-- `--paper-line` #d9d3bf (lignes, bordures)
-- `--ink` #1c2130 (texte)
-- `--verified` #1e6b52 / `--false` #a6402b / `--uncertain` #a9781f (verdicts)
+- `--paper` #f3f4f1 (fond, gris papier froid) · `--sheet` #fbfbf9 (surfaces)
+- `--rule` #d5d9d3 (filets, bordures, guillemets au repos)
+- `--ink` #172033 (texte, bleu encre) · `--ink-soft` #505a6b
+- Verdicts : `--verified` #1e6b52 / `--false` #a6402b / `--uncertain` #a9781f
 
 ## Typographie
-- `font-display` : Source Serif 4 -- titres, autorite editoriale
-- `font-mono-data` : IBM Plex Mono -- scores, dates, donnees (lecture d'instrument)
-- Corps de texte : IBM Plex Sans
+- `font-display` : Literata — titres et citations (serif de lecture, sérieux sans être académique)
+- Corps : Public Sans — police conçue pour les services publics, chiffres tabulaires
 
-## Motif signature
-Le verdict est rendu comme un tampon encreur (`.stamp` dans globals.css) : bordure epaisse,
-legere rotation, jamais une pastille de couleur generique.
+## Motifs signature
+1. Guillemets « » géants autour du champ (`.quote-frame`), qui passent à l'encre au focus.
+2. Verdict en tampon encreur (`.stamp`), conservé de la version précédente.
 
-## A ne pas faire
-Ne pas revenir aux cartes blanches arrondies avec ombre douce generique (`shadow-[0_8px_30px...]`,
-`rounded-2xl`, `bg-white`) -- c'est exactement le pattern qu'on a delibrement quitte.
+## À ne pas faire
+- Pas de libellés en MAJUSCULES espacées ni de police mono pour décorer.
+- Pas de cartes blanches arrondies avec ombre grise générique.
+- Toujours écrire avec les accents (vérifier, méthode, fiabilité…).

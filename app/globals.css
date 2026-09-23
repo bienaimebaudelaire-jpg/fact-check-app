@@ -1,33 +1,51 @@
 @import "tailwindcss";
 
 :root {
-  --paper: #efece2;
-  --paper-line: #d9d3bf;
-  --ink: #1c2130;
-  --ink-soft: #4b5266;
+  --paper: #f3f4f1;
+  --sheet: #fbfbf9;
+  --rule: #d5d9d3;
+  --ink: #172033;
+  --ink-soft: #505a6b;
   --verified: #1e6b52;
   --false: #a6402b;
   --uncertain: #a9781f;
-  --stamp: #8a2f2f;
+}
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { transition: none !important; animation: none !important; }
 }
 
 body {
   background: var(--paper);
   color: var(--ink);
-  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-  background-image:
-    linear-gradient(var(--paper-line) 1px, transparent 1px);
-  background-size: 100% 2.1rem;
-  background-position: 0 5.6rem;
+  font-family: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
 }
 
 .font-display {
-  font-family: 'Source Serif 4', Georgia, serif;
+  font-family: 'Literata', Georgia, serif;
 }
 
-.font-mono-data {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+/* Guillemets géants : le motif signature. L'affirmation est une citation mise à l'examen. */
+.quote-frame { position: relative; }
+.quote-frame::before,
+.quote-frame::after {
+  font-family: 'Literata', Georgia, serif;
+  font-weight: 300;
+  color: var(--rule);
+  position: absolute;
+  line-height: 1;
+  font-size: clamp(4.5rem, 10vw, 8rem);
+  pointer-events: none;
+  user-select: none;
 }
+.quote-frame::before { content: "«"; top: -0.2em; left: -0.08em; }
+.quote-frame::after { content: "»"; bottom: -0.55em; right: -0.04em; }
+.quote-frame:focus-within::before,
+.quote-frame:focus-within::after { color: var(--ink); transition: color .25s ease; }
 
 .stamp {
   border: 3px solid currentColor;
@@ -37,20 +55,23 @@ body {
   letter-spacing: 0.06em;
 }
 
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
 @theme inline {
   --color-paper: var(--paper);
   --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
   --color-verified: var(--verified);
   --color-false: var(--false);
   --color-uncertain: var(--uncertain);
-  --color-border: var(--paper-line);
-  --color-input: var(--paper-line);
+  --color-border: var(--rule);
+  --color-input: var(--rule);
   --color-ring: var(--ink);
   --color-background: var(--paper);
   --color-foreground: var(--ink);
   --color-muted-foreground: var(--ink-soft);
   --color-primary: var(--ink);
-  --color-primary-foreground: var(--paper);
-  --color-accent: #e4dfd0;
+  --color-primary-foreground: var(--sheet);
+  --color-accent: #e7e9e4;
   --color-accent-foreground: var(--ink);
 }
