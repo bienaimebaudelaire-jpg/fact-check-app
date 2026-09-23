@@ -1,9 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { ArrowRight, Check, ChevronDown, Info, Search, ShieldCheck } from 'lucide-react'
+import { useState } from 'react'
+import { Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
 import { Results } from '@/components/fact-check-results'
 import { analyzeClaim, demoClaimExamples, evidenceForClaim, isDemoClaim, type Evidence, type FactCheckResult } from '@/lib/factcheck-engine'
 
@@ -12,7 +11,6 @@ export default function Home() {
   const [result, setResult] = useState<FactCheckResult | null>(null)
   const [evidence, setEvidence] = useState<Evidence[]>([])
   const [demoNotice, setDemoNotice] = useState(false)
-  const selectedExample = useMemo(() => demoClaimExamples.find((example) => example.text === claim), [claim])
 
   const analyze = () => {
     if (!isDemoClaim(claim)) {
@@ -31,91 +29,83 @@ export default function Home() {
 
   return (
     <main className="min-h-screen text-ink">
-      <header className="border-b border-[var(--paper-line)]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center border-2 border-ink font-mono-data text-xs font-bold text-ink">FC</div>
-            <span className="font-display font-semibold tracking-tight">Fact Check</span>
-          </div>
-          <a href="#methodologie" className="font-mono-data text-xs uppercase tracking-[.14em] text-ink-soft hover:text-ink">Notre methode</a>
+      <header className="border-b border-[var(--rule)]">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4 lg:px-8">
+          <span className="font-display text-lg font-semibold tracking-tight">Fact Check</span>
+          <a href="#methode" className="text-sm text-ink-soft underline-offset-4 hover:text-ink hover:underline">Notre méthode</a>
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-5 pb-20 pt-16 lg:px-8 lg:pt-20">
+      <div className="mx-auto max-w-5xl px-5 pb-24 pt-14 lg:px-8 lg:pt-20">
         <section className="max-w-3xl">
-          <div className="font-mono-data mb-6 flex items-center gap-2 text-xs uppercase tracking-[.14em] text-[var(--verified)]">
-            <ShieldCheck size={15} /> Dossier ouvert &mdash; lecture calme des faits
-          </div>
-          <h1 className="font-display max-w-2xl text-4xl font-semibold leading-[1.08] tracking-tight text-ink sm:text-5xl">
-            Comprendre une affirmation, sans precipitation.
+          <h1 className="font-display text-[2.5rem] font-semibold leading-[1.1] tracking-tight sm:text-[3.25rem]">
+            Vous avez lu quelque chose.<br />Vérifions-le ensemble.
           </h1>
-          <p className="mt-6 max-w-xl text-lg leading-8 text-ink-soft">
-            Collez une affirmation. Fact Check compare les elements disponibles et separe la fiabilite de la confiance dans l&rsquo;analyse.
+          <p className="mt-5 max-w-xl text-lg leading-8 text-ink-soft">
+            Collez la phrase qui vous fait douter. Fact Check la confronte aux sources disponibles et vous dit ce qu&rsquo;on sait, et ce qu&rsquo;on ne sait pas.
           </p>
 
-          <div className="mt-10 border border-[var(--paper-line)] bg-[#f7f5ec] p-4 sm:p-6">
-            <label htmlFor="claim" className="mb-3 block text-sm font-semibold text-ink">Que souhaitez-vous verifier ?</label>
-            <Textarea
+          <div className="quote-frame mt-14 px-6 sm:px-12">
+            <label htmlFor="claim" className="sr-only">Affirmation à vérifier</label>
+            <textarea
               id="claim"
               value={claim}
               onChange={(event) => setClaim(event.target.value)}
-              placeholder="Collez une affirmation ou un extrait..."
-              className="min-h-32 resize-none border-[var(--paper-line)] bg-white/60 text-base leading-7 focus-visible:ring-ink"
+              onKeyDown={(event) => { if (event.key === 'Enter' && (event.metaKey || event.ctrlKey) && claim.trim()) analyze() }}
+              placeholder="Par exemple : les éoliennes consomment plus d’énergie qu’elles n’en produisent"
+              rows={3}
+              className="font-display block w-full resize-none border-0 border-b-2 border-[var(--rule)] bg-transparent px-0 pb-3 text-2xl leading-snug text-ink outline-none placeholder:text-[#9aa1ac] focus:border-ink sm:text-[1.75rem]"
             />
-            <div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-              <div className="font-mono-data flex items-center gap-2 text-[11px] text-ink-soft">
-                <Info size={13} /> V1 : analyse de texte, sans recherche web en direct
-              </div>
-              <Button onClick={analyze} disabled={!claim.trim()} className="bg-ink text-paper hover:bg-ink/85">
-                <Search size={16} /> Analyser <ArrowRight size={16} />
-              </Button>
-            </div>
+          </div>
+
+          <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-ink-soft">Version 1 : analyse du texte, sans recherche web en direct.</p>
+            <Button onClick={analyze} disabled={!claim.trim()} className="h-11 bg-ink px-6 text-[var(--sheet)] hover:bg-ink/85">
+              <Search size={17} /> Vérifier cette affirmation
+            </Button>
           </div>
         </section>
 
-        <section className="mt-8 border border-dashed border-[var(--paper-line)] p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex-1">
-              <p className="font-mono-data text-[11px] uppercase tracking-[.14em] text-ink-soft">Exemple de demonstration</p>
-              <p className="mt-1 text-sm text-ink-soft">Choisissez un cas illustratif pour voir le parcours complet.</p>
-            </div>
-            <div className="relative sm:w-[360px]">
-              <select
-                aria-label="Choisir un exemple de demonstration"
-                value={selectedExample?.text ?? ''}
-                onChange={(event) => setClaim(event.target.value)}
-                className="w-full appearance-none border border-[var(--paper-line)] bg-white/60 px-4 py-3 pr-10 text-sm text-ink outline-none focus:ring-2 focus:ring-ink"
-              >
-                <option value="">Selectionner un exemple</option>
-                {demoClaimExamples.map((example) => <option key={example.text} value={example.text}>{example.label}</option>)}
-              </select>
-              <ChevronDown size={16} className="pointer-events-none absolute right-3 top-3.5 text-ink-soft" />
-            </div>
-          </div>
+        <section className="mt-12 max-w-3xl border-t border-[var(--rule)] pt-6" aria-labelledby="exemples">
+          <h2 id="exemples" className="text-sm font-semibold">Pas d&rsquo;idée ? Essayez un exemple de démonstration :</h2>
+          <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+            {demoClaimExamples.map((example) => (
+              <li key={example.text}>
+                <button
+                  type="button"
+                  onClick={() => setClaim(example.text)}
+                  aria-pressed={claim === example.text}
+                  className={`text-left text-sm underline decoration-[var(--rule)] decoration-2 underline-offset-4 hover:decoration-ink ${claim === example.text ? 'text-ink decoration-ink' : 'text-ink-soft'}`}
+                >
+                  {example.label}
+                </button>
+              </li>
+            ))}
+          </ul>
         </section>
 
-        {result && <div className="mt-12"><Results result={result} evidence={evidence} claim={claim} /></div>}
+        {result && <div className="mt-16"><Results result={result} evidence={evidence} claim={claim} /></div>}
 
         {demoNotice && !result && (
-          <div id="resultats" className="mt-12 border border-dashed border-[var(--paper-line)] bg-[#f7f5ec] p-6 text-sm leading-6 text-ink-soft" aria-live="polite">
-            <p className="font-mono-data mb-2 text-[11px] uppercase tracking-[.14em] text-ink-soft">Démo</p>
-            Seuls les exemples proposés ci-dessus sont analysés pour l&rsquo;instant : aucune source réelle n&rsquo;est encore rattachée aux autres affirmations. Choisissez un exemple pour voir un parcours complet.
+          <div id="resultats" className="mt-16 max-w-3xl border-l-4 border-[var(--uncertain)] bg-[var(--sheet)] p-6 text-sm leading-7 text-ink-soft" aria-live="polite">
+            <p className="mb-1 font-semibold text-ink">Cette affirmation n&rsquo;est pas encore analysable</p>
+            Pour l&rsquo;instant, seuls les exemples de démonstration sont reliés à de vraies sources. Choisissez-en un ci-dessus pour voir une vérification complète.
           </div>
         )}
 
-        <footer id="methodologie" className="mt-20 border-t border-[var(--paper-line)] pt-8">
+        <footer id="methode" className="mt-24 border-t border-[var(--rule)] pt-8">
           <div className="grid gap-6 md:grid-cols-[1fr_2fr]">
             <div>
-              <p className="text-sm font-semibold text-ink">Comment ce score est calcule ?</p>
-              <p className="mt-2 text-sm leading-6 text-ink-soft">Une hierarchie, deux mesures, pas de raccourci.</p>
+              <h2 className="font-display text-xl font-semibold">Comment on vérifie</h2>
+              <p className="mt-2 text-sm leading-6 text-ink-soft">Une hiérarchie des sources, deux mesures, aucun raccourci.</p>
             </div>
-            <p className="max-w-2xl text-sm leading-7 text-ink-soft">
-              <strong className="font-semibold text-ink">Officiel &gt; institutionnel &gt; presse etablie &gt; fact-checkers tiers &gt; non verifiable.</strong> La fiabilite mesure la direction des elements ; la confiance mesure la solidite de l&rsquo;analyse (nombre, diversite et recence des sources). &laquo; Impossible a determiner &raquo; est une issue legitime, jamais un echec.
-            </p>
+            <div className="max-w-2xl space-y-3 text-sm leading-7 text-ink-soft">
+              <p><strong className="font-semibold text-ink">Sources officielles, puis institutionnelles, puis presse établie, puis fact-checkers tiers.</strong> Ce qui n&rsquo;est pas vérifiable compte en dernier.</p>
+              <p>La <strong className="font-semibold text-ink">fiabilité</strong> dit dans quel sens penchent les sources. La <strong className="font-semibold text-ink">confiance</strong> dit à quel point l&rsquo;analyse est solide : nombre, diversité et fraîcheur des sources.</p>
+              <p>&laquo; Impossible à déterminer &raquo; est une réponse honnête, pas un échec.</p>
+            </div>
           </div>
-          <div className="font-mono-data mt-8 flex items-center gap-2 text-[11px] text-ink-soft">
-            <Check size={13} className="text-[var(--verified)]" /> Methode transparente &middot; donnees de demonstration locales en V1
-          </div>
+          <p className="mt-10 text-xs text-ink-soft">Méthode publique. Données de démonstration locales en version 1.</p>
         </footer>
       </div>
     </main>
