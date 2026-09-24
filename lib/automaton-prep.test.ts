@@ -61,13 +61,20 @@ describe('preparePublishableFactCheck', () => {
     })
 
     expect(() => preparePublishableFactCheck(proposal)).toThrow('Publication interdite : validation humaine requise.')
+  })
+
+  it('reste non publiable apres approbation tant que les preuves restent mockees', () => {
+    const proposal = prepareFactCheckProposal({
+      claim: 'Les humains ont marché sur la Lune.',
+      runtime: 'automaton-prep',
+      requestedAt: '2026-09-24T00:00:00.000Z',
+    })
 
     const approved = approveProposal(proposal, 'analyste-humain', '2026-09-24T00:30:00.000Z')
-    expect(preparePublishableFactCheck(approved)).toMatchObject({
-      claim: 'Les humains ont marché sur la Lune.',
-      approvedBy: 'analyste-humain',
-      approvedAt: '2026-09-24T00:30:00.000Z',
-    })
+    expect(approved.publication.allowed).toBe(false)
+    expect(() => preparePublishableFactCheck(approved)).toThrow(
+      'Publication interdite : preuves réelles exploitables requises avant publication.',
+    )
   })
 
   it('reste non publiable apres approbation si un connecteur reel reste requis', () => {
@@ -81,7 +88,7 @@ describe('preparePublishableFactCheck', () => {
 
     expect(approved.publication.allowed).toBe(false)
     expect(() => preparePublishableFactCheck(approved)).toThrow(
-      'Publication interdite : preuves exploitables requises avant publication.',
+      'Publication interdite : preuves réelles exploitables requises avant publication.',
     )
   })
 })

@@ -64,6 +64,13 @@ function hasConnectorRequirement(proposal: FactCheckProposal): boolean {
   return proposal.warnings.some((warning) => warning.code === 'CONNECTOR_REQUIRED')
 }
 
+function hasMockEvidence(proposal: FactCheckProposal): boolean {
+  return (
+    proposal.warnings.some((warning) => warning.code === 'MOCK_EVIDENCE') ||
+    proposal.evidence.some((item) => item.mocked || item.provenance.retrievalMode === 'local_mock')
+  )
+}
+
 export function prepareFactCheckProposal(
   request: FactCheckAgentRequest,
   options?: { collectedAt?: string },
@@ -130,13 +137,16 @@ export function prepareFactCheckProposal(
 
 export function approveProposal(proposal: FactCheckProposal, approver: string, approvedAt?: string): FactCheckProposal {
   const connectorRequired = hasConnectorRequirement(proposal)
+  const mockEvidence = hasMockEvidence(proposal)
 
   return {
     ...proposal,
     publication: {
-      allowed: !connectorRequired,
+      allowed: !connectorRequired && !mockEvidence,
       reason: connectorRequired
         ? 'Validation humaine enregistrée, mais publication bloquée tant que les preuves requises ne sont pas collectées.'
+        : mockEvidence
+          ? 'Validation humaine enregistrée, mais publication bloquée tant que les preuves restent mockées.'
         : 'Validation humaine confirmée.',
     },
     validation: {
@@ -177,8 +187,8 @@ export function preparePublishableFactCheck(proposal: FactCheckProposal): Publis
     throw new Error('Publication interdite : validation humaine requise.')
   }
 
-  if (!proposal.publication.allowed || hasConnectorRequirement(proposal) || proposal.evidence.length === 0) {
-    throw new Error('Publication interdite : preuves exploitables requises avant publication.')
+  if (!proposal.publication.allowed || hasConnectorRequirement(proposal) || hasMockEvidence(proposal) || proposal.evidence.length === 0) {
+    throw new Error('Publication interdite : preuves réelles exploitables requises avant publication.')
   }
 
   return {

@@ -21,7 +21,7 @@ Une couche locale de préparation est disponible dans `lib/automaton-prep.ts` :
 - **N'accorde jamais** l'autorité finale au modèle (`finalVerdictAuthority: 'human_only'`) ;
 - **Marque explicitement** les preuves de démonstration comme mockées (`mocked: true`) ;
 - **Signale** les champs nécessitant un connecteur réel (`sourceUrl`, `retrievalTraceId`, `retrievedByConnector`) ;
-- **Bloque** toute publication tant qu'une validation humaine n'est pas approuvée (`preparePublishableFactCheck`).
+- **Bloque** toute publication tant qu'une validation humaine explicite et des preuves réelles non mockées ne sont pas disponibles (`preparePublishableFactCheck`).
 
 Portée actuelle : lecture/recherche locale de démo uniquement. Le verdict final et la publication restent soumis à approbation humaine explicite.
 
