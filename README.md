@@ -18,6 +18,7 @@ Remplacer les tableaux d'`evidence` mockés par un vrai pipeline de recherche de
 Une couche locale de préparation est disponible dans `lib/automaton-prep.ts` :
 
 - **Prépare** une proposition de vérification (`prepareFactCheckProposal`) ;
+- **Permet ensuite** de remplacer explicitement les preuves de démo par des preuves collectées via connecteur (`attachConnectorEvidence`) ;
 - **N'accorde jamais** l'autorité finale au modèle (`finalVerdictAuthority: 'human_only'`) ;
 - **Marque explicitement** les preuves de démonstration comme mockées (`mocked: true`) ;
 - **Signale** les champs nécessitant un connecteur réel (`sourceUrl`, `retrievalTraceId`, `retrievedByConnector`) ;

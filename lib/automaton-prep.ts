@@ -19,10 +19,13 @@ export type AgentWarning = {
 
 export type EvidenceProvenance = {
   provider: 'local-demo-dataset' | 'external-connector'
-  retrievalMode: 'local_mock' | 'connector_required'
+  retrievalMode: 'local_mock' | 'connector_live' | 'connector_required'
   collectedAt: string
   connectorConfigured: boolean
   note: string
+  sourceUrl?: string
+  retrievalTraceId?: string
+  retrievedByConnector?: string
 }
 
 export type PreparedEvidence = Evidence & {
@@ -56,6 +59,12 @@ export type FactCheckProposal = {
     reason: string
   }
   validation: HumanValidationGate
+}
+
+export type ConnectorEvidenceInput = Evidence & {
+  sourceUrl: string
+  retrievalTraceId: string
+  retrievedByConnector: string
 }
 
 const CONNECTOR_REQUIRED_FIELDS = ['sourceUrl', 'retrievalTraceId', 'retrievedByConnector'] as const
@@ -153,6 +162,45 @@ export function approveProposal(proposal: FactCheckProposal, approver: string, a
       status: 'approved',
       approver,
       approvedAt: approvedAt ?? new Date().toISOString(),
+    },
+  }
+}
+
+export function attachConnectorEvidence(
+  proposal: FactCheckProposal,
+  evidence: ConnectorEvidenceInput[],
+  options?: { collectedAt?: string },
+): FactCheckProposal {
+  const collectedAt = options?.collectedAt ?? new Date().toISOString()
+  const preparedEvidence: PreparedEvidence[] = evidence.map(
+    ({ sourceUrl, retrievalTraceId, retrievedByConnector, ...item }) => ({
+      ...item,
+      mocked: false,
+      requiresConnectorFields: [...CONNECTOR_REQUIRED_FIELDS],
+      provenance: {
+        provider: 'external-connector',
+        retrievalMode: 'connector_live',
+        collectedAt,
+        connectorConfigured: true,
+        note: 'Preuve collectée via un connecteur réel.',
+        sourceUrl,
+        retrievalTraceId,
+        retrievedByConnector,
+      },
+    }),
+  )
+
+  return {
+    ...proposal,
+    evidence: preparedEvidence,
+    analysis: analyzeClaim(proposal.request.claim, evidence),
+    warnings: proposal.warnings.filter((warning) => warning.code !== 'MOCK_EVIDENCE' && warning.code !== 'CONNECTOR_REQUIRED'),
+    publication: {
+      allowed: false,
+      reason: 'Publication bloquée tant qu’une nouvelle validation humaine explicite n’a pas été donnée.',
+    },
+    validation: {
+      status: 'required',
     },
   }
 }

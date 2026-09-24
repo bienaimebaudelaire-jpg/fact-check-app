@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   approveProposal,
+  attachConnectorEvidence,
   prepareFactCheckProposal,
   preparePublishableFactCheck,
 } from './automaton-prep'
@@ -90,5 +91,55 @@ describe('preparePublishableFactCheck', () => {
     expect(() => preparePublishableFactCheck(approved)).toThrow(
       'Publication interdite : preuves réelles exploitables requises avant publication.',
     )
+  })
+
+  it('autorise la publication apres remplacement des mocks par des preuves collectees et une nouvelle approbation humaine', () => {
+    const proposal = prepareFactCheckProposal({
+      claim: 'Les humains ont marché sur la Lune.',
+      runtime: 'automaton-prep',
+      requestedAt: '2026-09-24T00:00:00.000Z',
+    })
+
+    const withConnectorEvidence = attachConnectorEvidence(
+      proposal,
+      [
+        {
+          sourceName: 'NASA — API missions Apollo',
+          sourceLevel: 1,
+          stance: 'supports',
+          dateChecked: '2026-09-24',
+          detail: 'Archive primaire synchronisée via connecteur.',
+          sourceUrl: 'https://example.test/nasa/apollo',
+          retrievalTraceId: 'trace-apollo-001',
+          retrievedByConnector: 'automaton-web-connector',
+        },
+        {
+          sourceName: 'CNES — dossiers Apollo',
+          sourceLevel: 1,
+          stance: 'supports',
+          dateChecked: '2026-09-24',
+          detail: 'Source institutionnelle collectée via connecteur.',
+          sourceUrl: 'https://example.test/cnes/apollo',
+          retrievalTraceId: 'trace-apollo-002',
+          retrievedByConnector: 'automaton-web-connector',
+        },
+      ],
+      { collectedAt: '2026-09-24T00:20:00.000Z' },
+    )
+
+    expect(withConnectorEvidence.validation.status).toBe('required')
+    expect(withConnectorEvidence.evidence.every((item) => item.mocked === false)).toBe(true)
+    expect(withConnectorEvidence.evidence.every((item) => item.provenance.retrievalMode === 'connector_live')).toBe(true)
+    expect(withConnectorEvidence.warnings.some((warning) => warning.code === 'MOCK_EVIDENCE')).toBe(false)
+    expect(withConnectorEvidence.warnings.some((warning) => warning.code === 'CONNECTOR_REQUIRED')).toBe(false)
+
+    const approved = approveProposal(withConnectorEvidence, 'analyste-humain', '2026-09-24T00:30:00.000Z')
+
+    expect(preparePublishableFactCheck(approved)).toMatchObject({
+      claim: 'Les humains ont marché sur la Lune.',
+      approvedBy: 'analyste-humain',
+      approvedAt: '2026-09-24T00:30:00.000Z',
+      evidenceCount: 2,
+    })
   })
 })
