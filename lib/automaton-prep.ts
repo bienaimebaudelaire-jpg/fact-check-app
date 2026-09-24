@@ -148,6 +148,9 @@ export function approveProposal(proposal: FactCheckProposal, approver: string, a
   if (proposal.validation.status === 'rejected') {
     throw new Error('Approbation interdite : la proposition rejetée doit être reconstruite ou réhydratée avant réexamen.')
   }
+  if (proposal.validation.status === 'approved') {
+    throw new Error('Approbation interdite : la proposition est déjà approuvée et doit être réinitialisée avant tout nouvel examen.')
+  }
 
   const connectorRequired = hasConnectorRequirement(proposal)
   const mockEvidence = hasMockEvidence(proposal)

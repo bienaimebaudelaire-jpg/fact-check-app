@@ -108,6 +108,47 @@ describe('preparePublishableFactCheck', () => {
     )
   })
 
+  it('refuse d’écraser une approbation humaine deja enregistree', () => {
+    const proposal = prepareFactCheckProposal({
+      claim: 'Les batteries solides sont deployeees partout.',
+      runtime: 'automaton-prep',
+      requestedAt: '2026-09-24T00:00:00.000Z',
+    })
+
+    const withConnectorEvidence = attachConnectorEvidence(
+      proposal,
+      [
+        {
+          sourceName: 'Agence énergie',
+          sourceLevel: 1,
+          stance: 'supports',
+          dateChecked: '2026-09-24',
+          detail: 'Collecte primaire test.',
+          sourceUrl: 'https://example.test/energie',
+          retrievalTraceId: 'trace-energy-001',
+          retrievedByConnector: 'automaton-web-connector',
+        },
+        {
+          sourceName: 'Institut industrie',
+          sourceLevel: 2,
+          stance: 'supports',
+          dateChecked: '2026-09-24',
+          detail: 'Collecte institutionnelle test.',
+          sourceUrl: 'https://example.test/industrie',
+          retrievalTraceId: 'trace-energy-002',
+          retrievedByConnector: 'automaton-web-connector',
+        },
+      ],
+      { collectedAt: '2026-09-24T00:20:00.000Z' },
+    )
+
+    const approved = approveProposal(withConnectorEvidence, 'analyste-humain', '2026-09-24T00:30:00.000Z')
+
+    expect(() => approveProposal(approved, 'second-analyste', '2026-09-24T00:40:00.000Z')).toThrow(
+      'Approbation interdite : la proposition est déjà approuvée et doit être réinitialisée avant tout nouvel examen.',
+    )
+  })
+
   it('autorise la publication apres remplacement des mocks par des preuves collectees et une nouvelle approbation humaine', () => {
     const proposal = prepareFactCheckProposal({
       claim: 'Les humains ont marché sur la Lune.',
