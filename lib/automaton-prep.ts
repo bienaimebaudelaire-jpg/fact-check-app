@@ -193,7 +193,7 @@ export function attachConnectorEvidence(
   return {
     ...proposal,
     evidence: preparedEvidence,
-    analysis: analyzeClaim(proposal.request.claim, evidence),
+    analysis: analyzeClaim(proposal.request.claim, preparedEvidence),
     warnings: proposal.warnings.filter((warning) => warning.code !== 'MOCK_EVIDENCE' && warning.code !== 'CONNECTOR_REQUIRED'),
     publication: {
       allowed: false,
