@@ -13,6 +13,18 @@ Scaffold V1 du produit Fact Check : moteur de classification factuel + double ja
 
 Remplacer les tableaux d'`evidence` mockés par un vrai pipeline de recherche de sources, en respectant la hiérarchie de sources définie dans la spec produit.
 
+## Pré-intégration HUMEAN / Automaton (sans réseau)
+
+Une couche locale de préparation est disponible dans `lib/automaton-prep.ts` :
+
+- **Prépare** une proposition de vérification (`prepareFactCheckProposal`) ;
+- **N'accorde jamais** l'autorité finale au modèle (`finalVerdictAuthority: 'human_only'`) ;
+- **Marque explicitement** les preuves de démonstration comme mockées (`mocked: true`) ;
+- **Signale** les champs nécessitant un connecteur réel (`sourceUrl`, `retrievalTraceId`, `retrievedByConnector`) ;
+- **Bloque** toute publication tant qu'une validation humaine n'est pas approuvée (`preparePublishableFactCheck`).
+
+Portée actuelle : lecture/recherche locale de démo uniquement. Le verdict final et la publication restent soumis à approbation humaine explicite.
+
 ## Démarrer en local
 
 ```bash
