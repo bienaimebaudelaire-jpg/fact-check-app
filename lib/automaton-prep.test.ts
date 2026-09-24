@@ -4,6 +4,7 @@ import {
   attachConnectorEvidence,
   prepareFactCheckProposal,
   preparePublishableFactCheck,
+  rejectProposal,
 } from './automaton-prep'
 
 describe('prepareFactCheckProposal', () => {
@@ -90,6 +91,20 @@ describe('preparePublishableFactCheck', () => {
     expect(approved.publication.allowed).toBe(false)
     expect(() => preparePublishableFactCheck(approved)).toThrow(
       'Publication interdite : preuves réelles exploitables requises avant publication.',
+    )
+  })
+
+  it('refuse d’approuver directement une proposition deja rejetee', () => {
+    const proposal = prepareFactCheckProposal({
+      claim: 'Les humains ont marché sur la Lune.',
+      runtime: 'automaton-prep',
+      requestedAt: '2026-09-24T00:00:00.000Z',
+    })
+
+    const rejected = rejectProposal(proposal, 'analyste-humain', 'Sources insuffisantes pour publication.')
+
+    expect(() => approveProposal(rejected, 'analyste-humain', '2026-09-24T00:30:00.000Z')).toThrow(
+      'Approbation interdite : la proposition rejetée doit être reconstruite ou réhydratée avant réexamen.',
     )
   })
 
