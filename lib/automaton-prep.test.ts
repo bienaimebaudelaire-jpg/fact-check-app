@@ -17,9 +17,12 @@ describe('prepareFactCheckProposal', () => {
     )
 
     expect(proposal.evidence.length).toBeGreaterThan(0)
+    expect(proposal.finalVerdictAuthority).toBe('human_only')
     expect(proposal.evidence.every((item) => item.mocked)).toBe(true)
+    expect(proposal.evidence.every((item) => item.provenance.provider === 'local-demo-dataset')).toBe(true)
     expect(proposal.evidence.every((item) => item.provenance.retrievalMode === 'local_mock')).toBe(true)
     expect(proposal.evidence.every((item) => item.provenance.connectorConfigured === false)).toBe(true)
+    expect(proposal.evidence.every((item) => item.provenance.note.includes('aucune collecte réseau réelle'))).toBe(true)
     expect(proposal.warnings.some((warning) => warning.code === 'MOCK_EVIDENCE')).toBe(true)
     expect(proposal.warnings.some((warning) => warning.code === 'HUMAN_APPROVAL_REQUIRED')).toBe(true)
   })
