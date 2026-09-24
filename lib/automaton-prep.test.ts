@@ -69,4 +69,19 @@ describe('preparePublishableFactCheck', () => {
       approvedAt: '2026-09-24T00:30:00.000Z',
     })
   })
+
+  it('reste non publiable apres approbation si un connecteur reel reste requis', () => {
+    const proposal = prepareFactCheckProposal({
+      claim: 'Les batteries solides sont deployeees partout.',
+      runtime: 'automaton-prep',
+      requestedAt: '2026-09-24T00:00:00.000Z',
+    })
+
+    const approved = approveProposal(proposal, 'analyste-humain', '2026-09-24T00:30:00.000Z')
+
+    expect(approved.publication.allowed).toBe(false)
+    expect(() => preparePublishableFactCheck(approved)).toThrow(
+      'Publication interdite : preuves exploitables requises avant publication.',
+    )
+  })
 })
