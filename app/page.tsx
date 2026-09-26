@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Results } from '@/components/fact-check-results'
@@ -8,24 +8,40 @@ import { analyzeClaim, demoClaimExamples, evidenceForClaim, isDemoClaim, type Ev
 
 export default function Home() {
   const [claim, setClaim] = useState('')
+  // Texte réellement analysé : le résultat affiché doit toujours citer cette phrase,
+  // jamais le contenu courant du champ (sinon modifier le champ réécrit la citation
+  // sous un verdict qui ne la concerne pas).
+  const [analyzedClaim, setAnalyzedClaim] = useState('')
   const [result, setResult] = useState<FactCheckResult | null>(null)
   const [evidence, setEvidence] = useState<Evidence[]>([])
   const [demoNotice, setDemoNotice] = useState(false)
 
-  const analyze = () => {
-    if (!isDemoClaim(claim)) {
+  const analyze = (text: string = claim, scroll = true) => {
+    const url = new URL(window.location.href)
+    url.searchParams.set('q', text.trim())
+    window.history.replaceState(null, '', url)
+    setAnalyzedClaim(text)
+    if (!isDemoClaim(text)) {
       setResult(null)
       setEvidence([])
       setDemoNotice(true)
-      window.setTimeout(() => document.getElementById('resultats')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
-      return
+    } else {
+      const found = evidenceForClaim(text)
+      setDemoNotice(false)
+      setEvidence(found)
+      setResult(analyzeClaim(text, found))
     }
-    const found = evidenceForClaim(claim)
-    setDemoNotice(false)
-    setEvidence(found)
-    setResult(analyzeClaim(claim, found))
-    window.setTimeout(() => document.getElementById('resultats')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+    if (scroll) window.setTimeout(() => document.getElementById('resultats')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
+
+  // Lien partagé (?q=...) : rejouer l'analyse à l'ouverture.
+  useEffect(() => {
+    const shared = new URLSearchParams(window.location.search).get('q')?.trim()
+    if (!shared) return
+    setClaim(shared)
+    analyze(shared, false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <main className="min-h-screen text-ink">
@@ -60,7 +76,7 @@ export default function Home() {
 
           <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-ink-soft">Version 1 : analyse du texte, sans recherche web en direct.</p>
-            <Button onClick={analyze} disabled={!claim.trim()} className="h-11 bg-ink px-6 text-[var(--sheet)] hover:bg-ink/85">
+            <Button onClick={() => analyze()} disabled={!claim.trim()} className="h-11 bg-ink px-6 text-[var(--sheet)] hover:bg-ink/85">
               <Search size={17} /> Vérifier cette affirmation
             </Button>
           </div>
@@ -84,12 +100,12 @@ export default function Home() {
           </ul>
         </section>
 
-        {result && <div className="mt-16"><Results result={result} evidence={evidence} claim={claim} /></div>}
+        {result && <div className="mt-16"><Results result={result} evidence={evidence} claim={analyzedClaim} /></div>}
 
         {demoNotice && !result && (
           <div id="resultats" className="mt-16 max-w-3xl border-l-4 border-[var(--uncertain)] bg-[var(--sheet)] p-6 text-sm leading-7 text-ink-soft" aria-live="polite">
             <p className="mb-1 font-semibold text-ink">Cette affirmation n&rsquo;est pas encore analysable</p>
-            Pour l&rsquo;instant, seuls les exemples de démonstration sont reliés à de vraies sources. Choisissez-en un ci-dessus pour voir une vérification complète.
+            Pour l&rsquo;instant, seuls les exemples de démonstration peuvent être analysés, avec des sources simulées (pas encore de recherche en direct). Choisissez-en un ci-dessus pour voir comment se présente une vérification complète.
           </div>
         )}
 
