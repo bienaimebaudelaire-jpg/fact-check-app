@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Results } from '@/components/fact-check-results'
-import { analyzeClaim, demoClaimExamples, evidenceForClaim, isDemoClaim, type Evidence, type FactCheckResult } from '@/lib/factcheck-engine'
+import { demoClaimExamples } from '@/lib/factcheck-engine'
+import { OFFICIAL_PUBLISHERS, type FactCheckSearchResult } from '@/lib/google-factcheck'
 
 export default function Home() {
   const [claim, setClaim] = useState('')
@@ -12,26 +13,32 @@ export default function Home() {
   // jamais le contenu courant du champ (sinon modifier le champ réécrit la citation
   // sous un verdict qui ne la concerne pas).
   const [analyzedClaim, setAnalyzedClaim] = useState('')
-  const [result, setResult] = useState<FactCheckResult | null>(null)
-  const [evidence, setEvidence] = useState<Evidence[]>([])
-  const [demoNotice, setDemoNotice] = useState(false)
+  const [result, setResult] = useState<FactCheckSearchResult | null>(null)
+  const [loading, setLoading] = useState(false)
+  // Seule la dernière demande a le droit d'afficher son résultat (réponses dans le désordre).
+  const latestRequest = useRef(0)
 
-  const analyze = (text: string = claim, scroll = true) => {
+  const analyze = async (text: string = claim, scroll = true) => {
+    const query = text.trim()
+    if (!query) return
     const url = new URL(window.location.href)
-    url.searchParams.set('q', text.trim())
+    url.searchParams.set('q', query)
     window.history.replaceState(null, '', url)
-    setAnalyzedClaim(text)
-    if (!isDemoClaim(text)) {
-      setResult(null)
-      setEvidence([])
-      setDemoNotice(true)
-    } else {
-      const found = evidenceForClaim(text)
-      setDemoNotice(false)
-      setEvidence(found)
-      setResult(analyzeClaim(text, found))
-    }
+    const requestId = ++latestRequest.current
+    setAnalyzedClaim(query)
+    setResult(null)
+    setLoading(true)
     if (scroll) window.setTimeout(() => document.getElementById('resultats')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+    let next: FactCheckSearchResult
+    try {
+      const response = await fetch(`/api/verifier?q=${encodeURIComponent(query)}`)
+      next = (await response.json()) as FactCheckSearchResult
+    } catch {
+      next = { status: 'error', message: 'Le service de vérification est injoignable.' }
+    }
+    if (requestId !== latestRequest.current) return
+    setResult(next)
+    setLoading(false)
   }
 
   // Lien partagé (?q=...) : rejouer l'analyse à l'ouverture.
@@ -58,7 +65,7 @@ export default function Home() {
             Vous avez lu quelque chose.<br />Vérifions-le ensemble.
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-8 text-ink-soft">
-            Collez la phrase qui vous fait douter. Fact Check la confronte aux sources disponibles et vous dit ce qu&rsquo;on sait, et ce qu&rsquo;on ne sait pas.
+            Collez la phrase qui vous fait douter. Fact Check cherche si les médias publics français l&rsquo;ont déjà vérifiée, et vous montre leur verdict avec le lien vers l&rsquo;article.
           </p>
 
           <div className="quote-frame mt-14 px-6 sm:px-12">
@@ -75,15 +82,15 @@ export default function Home() {
           </div>
 
           <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-ink-soft">Version 1 : analyse du texte, sans recherche web en direct.</p>
-            <Button onClick={() => analyze()} disabled={!claim.trim()} className="h-11 bg-ink px-6 text-[var(--sheet)] hover:bg-ink/85">
-              <Search size={17} /> Vérifier cette affirmation
+            <p className="text-sm text-ink-soft">Recherche en français dans les vérifications publiées.</p>
+            <Button onClick={() => analyze()} disabled={!claim.trim() || loading} className="h-11 bg-ink px-6 text-[var(--sheet)] hover:bg-ink/85">
+              <Search size={17} /> {loading ? 'Recherche en cours…' : 'Vérifier cette affirmation'}
             </Button>
           </div>
         </section>
 
         <section className="mt-12 max-w-3xl border-t border-[var(--rule)] pt-6" aria-labelledby="exemples">
-          <h2 id="exemples" className="text-sm font-semibold">Pas d&rsquo;idée ? Essayez un exemple de démonstration :</h2>
+          <h2 id="exemples" className="text-sm font-semibold">Pas d&rsquo;idée ? Essayez un exemple :</h2>
           <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
             {demoClaimExamples.map((example) => (
               <li key={example.text}>
@@ -100,12 +107,9 @@ export default function Home() {
           </ul>
         </section>
 
-        {result && <div className="mt-16"><Results result={result} evidence={evidence} claim={analyzedClaim} /></div>}
-
-        {demoNotice && !result && (
-          <div id="resultats" className="mt-16 max-w-3xl border-l-4 border-[var(--uncertain)] bg-[var(--sheet)] p-6 text-sm leading-7 text-ink-soft" aria-live="polite">
-            <p className="mb-1 font-semibold text-ink">Cette affirmation n&rsquo;est pas encore analysable</p>
-            Pour l&rsquo;instant, seuls les exemples de démonstration peuvent être analysés, avec des sources simulées (pas encore de recherche en direct). Choisissez-en un ci-dessus pour voir comment se présente une vérification complète.
+        {(loading || result) && (
+          <div className="mt-16">
+            <Results claim={analyzedClaim} result={result} loading={loading} />
           </div>
         )}
 
@@ -113,15 +117,15 @@ export default function Home() {
           <div className="grid gap-6 md:grid-cols-[1fr_2fr]">
             <div>
               <h2 className="font-display text-xl font-semibold">Comment on vérifie</h2>
-              <p className="mt-2 text-sm leading-6 text-ink-soft">Une hiérarchie des sources, deux mesures, aucun raccourci.</p>
+              <p className="mt-2 text-sm leading-6 text-ink-soft">Des vérifications publiées, recopiées sans retouche.</p>
             </div>
             <div className="max-w-2xl space-y-3 text-sm leading-7 text-ink-soft">
-              <p><strong className="font-semibold text-ink">Sources officielles, puis institutionnelles, puis presse établie, puis fact-checkers tiers.</strong> Ce qui n&rsquo;est pas vérifiable compte en dernier.</p>
-              <p>La <strong className="font-semibold text-ink">fiabilité</strong> dit dans quel sens penchent les sources. La <strong className="font-semibold text-ink">confiance</strong> dit à quel point l&rsquo;analyse est solide : nombre, diversité et fraîcheur des sources.</p>
-              <p>&laquo; Impossible à déterminer &raquo; est une réponse honnête, pas un échec.</p>
+              <p>Fact Check interroge l&rsquo;outil de recherche de vérifications de Google (Fact Check Tools), en français, et ne retient que les <strong className="font-semibold text-ink">médias publics français</strong> : {OFFICIAL_PUBLISHERS.map((p) => p.name).join(', ')}.</p>
+              <p>Chaque verdict est celui du média, <strong className="font-semibold text-ink">recopié tel quel</strong>, à côté de l&rsquo;affirmation qu&rsquo;il a réellement vérifiée, qui peut être différente de votre phrase. Fact Check n&rsquo;ajoute aucun verdict de son côté.</p>
+              <p>Si aucun de ces médias n&rsquo;a vérifié le sujet, la réponse est &laquo;&nbsp;Impossible à déterminer&nbsp;&raquo;. C&rsquo;est une réponse honnête, pas un échec.</p>
             </div>
           </div>
-          <p className="mt-10 text-xs text-ink-soft">Méthode publique. Données de démonstration locales en version 1.</p>
+          <p className="mt-10 text-xs text-ink-soft">Méthode publique. Liste des médias retenus dans <code>lib/google-factcheck.ts</code>.</p>
         </footer>
       </div>
     </main>
