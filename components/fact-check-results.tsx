@@ -1,23 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, ChevronDown, Clipboard } from 'lucide-react'
+import { ArrowUpRight, Check, Clipboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { formatStance, type FactCheckResult, type Evidence, type SourceLevel, VERDICTS } from '@/lib/factcheck-engine'
+import { VERDICTS } from '@/lib/factcheck-engine'
+import type { FactCheckSearchResult, MediaReview } from '@/lib/google-factcheck'
 
-const levelNames: Record<SourceLevel, string> = {
-  1: 'Officiel / primaire',
-  2: 'Institutionnel',
-  3: 'Presse ou fact-checker établi',
-  4: 'Tiers spécialisé',
-  5: 'Non vérifiable',
-}
-
-const stanceColor = { supports: 'var(--verified)', contradicts: 'var(--false)', neutral: 'var(--rule)' } as const
-
-function formatDate(iso: string) {
+function formatDate(iso?: string) {
+  if (!iso) return undefined
   const date = new Date(iso)
-  return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+  return Number.isNaN(date.getTime()) ? undefined : date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
 }
 
 function VerdictStamp({ label, color }: { label: string; color: string }) {
@@ -28,129 +20,85 @@ function VerdictStamp({ label, color }: { label: string; color: string }) {
   )
 }
 
-/**
- * La fiabilité dit dans quel sens penchent les sources : une balance à deux plateaux
- * (contredit / soutient) plutôt qu'une barre de progression, avec 50 au centre.
- */
-function Balance({ score, color }: { score: number; color: string }) {
-  const lean = score === 50 ? 'Les sources s’équilibrent.' : score > 50 ? 'Les sources penchent du côté « soutient ».' : 'Les sources penchent du côté « contredit ».'
-  const from = Math.min(score, 50)
-  const width = Math.abs(score - 50)
+function Review({ review }: { review: MediaReview }) {
+  const date = formatDate(review.reviewDate)
   return (
-    <div>
-      <div className="flex items-baseline justify-between gap-4">
-        <h4 className="text-sm font-semibold text-ink">Fiabilité</h4>
-        <p className="tabular-nums text-ink"><strong className="text-2xl font-semibold">{score}</strong><span className="text-sm text-ink-soft"> / 100</span></p>
-      </div>
-      <div
-        className="relative mt-4 h-8"
-        role="meter"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={score}
-        aria-label="Fiabilité, de contredit (0) à soutient (100)"
-      >
-        <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[var(--rule)]" />
-        <div className="absolute top-1/2 h-1 -translate-y-1/2 transition-all duration-700" style={{ left: `${from}%`, width: `${width}%`, backgroundColor: color }} />
-        <div className="absolute left-1/2 top-1 h-6 w-px bg-ink-soft/60" aria-hidden />
-        <div
-          className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--sheet)] transition-all duration-700"
-          style={{ left: `${score}%`, backgroundColor: color, boxShadow: `0 0 0 1px ${color}` }}
-          aria-hidden
-        />
-      </div>
-      <div className="mt-1 flex justify-between text-xs text-ink-soft" aria-hidden>
-        <span>Contredit</span>
-        <span>Soutient</span>
-      </div>
-      <p className="mt-3 text-sm text-ink-soft">{lean}</p>
-    </div>
+    <li className="border-l-[3px] border-ink pl-4">
+      {review.reviewedClaim && (
+        <p className="font-display text-lg italic leading-snug text-ink">&laquo;&nbsp;{review.reviewedClaim}&nbsp;&raquo;</p>
+      )}
+      {review.claimant && <p className="mt-1 text-xs text-ink-soft">Affirmation attribuée à {review.claimant}</p>}
+      <p className="mt-3 text-sm text-ink">
+        <span className="font-semibold">{review.publisherName}</span>
+        <span className="text-ink-soft"> — verdict du média : </span>
+        <strong className="font-semibold">{review.rating}</strong>
+      </p>
+      <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-soft">
+        {date ? <span>Publié le {date}</span> : <span>Date non indiquée</span>}
+        <a href={review.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-medium text-ink underline decoration-[var(--rule)] decoration-2 underline-offset-4 hover:decoration-ink">
+          Lire la vérification sur {review.publisherSite}
+          <ArrowUpRight size={14} aria-hidden />
+        </a>
+      </p>
+    </li>
   )
 }
 
-function Confidence({ score }: { score: number }) {
+export function Results({ claim, result, loading }: { claim: string; result: FactCheckSearchResult | null; loading: boolean }) {
+  const undetermined = VERDICTS.undetermined
   return (
-    <div>
-      <div className="flex items-baseline justify-between gap-4">
-        <h4 className="text-sm font-semibold text-ink">Confiance de l’analyse</h4>
-        <p className="tabular-nums text-ink"><strong className="text-2xl font-semibold">{score}</strong><span className="text-sm text-ink-soft"> / 100</span></p>
-      </div>
-      <div className="mt-4 h-1 bg-[var(--rule)]" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={score} aria-label="Confiance de l’analyse">
-        <div className="h-full bg-ink-soft transition-all duration-700" style={{ width: `${score}%` }} />
-      </div>
-      <p className="mt-3 text-sm text-ink-soft">Solidité de l’analyse : nombre, diversité et fraîcheur des sources. Elle ne dit rien du sens du verdict.</p>
-    </div>
-  )
-}
-
-export function Results({ result, evidence, claim }: { result: FactCheckResult; evidence: Evidence[]; claim: string }) {
-  const [method, setMethod] = useState(false)
-  const verdict = VERDICTS[result.verdict]
-  const undetermined = result.verdict === 'undetermined'
-  return (
-    <section id="resultats" className="max-w-3xl" aria-live="polite">
+    <section id="resultats" className="max-w-3xl" aria-live="polite" aria-busy={loading}>
       <div className="border border-[var(--rule)] bg-[var(--sheet)]">
         <header className="p-6 sm:p-10">
           <p className="text-sm text-ink-soft">Résultat de la vérification</p>
           <h2 className="font-display mt-2 text-2xl font-normal italic leading-snug text-ink sm:text-[2rem]">&laquo;&nbsp;{claim}&nbsp;&raquo;</h2>
-          <div className="mt-7 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
-            <VerdictStamp label={verdict.label} color={verdict.color} />
-            <p className="max-w-md text-base leading-7 text-ink">{verdict.description}</p>
-          </div>
+
+          {loading && <p className="mt-7 text-base text-ink-soft">Recherche des vérifications publiées…</p>}
+
+          {!loading && result?.status === 'none' && (
+            <div className="mt-7 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
+              <VerdictStamp label={undetermined.label} color={undetermined.color} />
+              <p className="max-w-md text-base leading-7 text-ink">Aucun média public français n&rsquo;a publié de vérification sur ce sujet. Fact Check ne donne pas de verdict à sa place.</p>
+            </div>
+          )}
+
+          {!loading && result?.status === 'error' && (
+            <div className="mt-7 border-l-4 border-[var(--uncertain)] pl-4">
+              <p className="font-semibold text-ink">Vérification indisponible pour le moment</p>
+              <p className="mt-1 text-sm leading-6 text-ink-soft">{result.message} Ce n&rsquo;est pas un verdict : réessayez plus tard.</p>
+            </div>
+          )}
+
+          {!loading && result?.status === 'found' && (
+            <p className="mt-7 max-w-xl text-base leading-7 text-ink">
+              {result.reviews.length === 1
+                ? 'Un média public a vérifié une affirmation proche. '
+                : `${result.reviews.length} vérifications de médias publics portent sur des affirmations proches. `}
+              Chaque verdict ci-dessous concerne l&rsquo;affirmation citée au-dessus de lui, pas forcément votre phrase mot pour mot.
+            </p>
+          )}
         </header>
 
-        <div className="grid gap-8 border-t border-[var(--rule)] p-6 sm:grid-cols-2 sm:gap-10 sm:p-10">
-          {undetermined ? (
-            <div>
-              <h4 className="text-sm font-semibold text-ink">Fiabilité</h4>
-              <p className="mt-3 text-sm leading-6 text-ink-soft">Pas de balance ici : le verdict est &laquo;&nbsp;impossible à déterminer&nbsp;&raquo;. Une position laisserait croire à une mesure qui n&rsquo;existe pas.</p>
-            </div>
-          ) : (
-            <Balance score={result.reliabilityScore} color={verdict.color} />
-          )}
-          <Confidence score={result.confidenceScore} />
-        </div>
-
-        <div className="border-t border-[var(--rule)] p-6 sm:p-10">
-          <h3 className="font-display text-lg font-semibold text-ink">Les sources ({evidence.length})</h3>
-          {result.breakdown.length === 0 ? (
-            <p className="mt-3 text-sm text-ink-soft">Aucune source exploitable pour cette affirmation.</p>
-          ) : (
-            <ul className="mt-5 space-y-5">
-              {result.breakdown.map((item) => (
-                <li key={`${item.sourceName}-${item.dateChecked}`} className="border-l-[3px] pl-4" style={{ borderColor: stanceColor[item.stance] }}>
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                    <p className="font-semibold text-ink">{item.sourceName}</p>
-                    <p className="text-sm font-medium" style={{ color: item.stance === 'neutral' ? 'var(--ink-soft)' : stanceColor[item.stance] }}>
-                      {formatStance(item.stance)}
-                      {item.direction !== 'neutre' && (
-                        <span className="ml-2 tabular-nums" aria-label={`impact ${item.impact} points`}>{item.impact > 0 ? '+' : ''}{item.impact}</span>
-                      )}
-                    </p>
-                  </div>
-                  <p className="mt-0.5 text-xs text-ink-soft">{levelNames[item.sourceLevel]}, vérifié le {formatDate(item.dateChecked)}</p>
-                  {item.detail && <p className="mt-2 text-sm leading-6 text-ink-soft">{item.detail}</p>}
-                </li>
-              ))}
+        {!loading && result?.status === 'found' && (
+          <div className="border-t border-[var(--rule)] p-6 sm:p-10">
+            <h3 className="font-display text-lg font-semibold text-ink">Vérifications publiées ({result.reviews.length})</h3>
+            <ul className="mt-5 space-y-7">
+              {result.reviews.map((review) => <Review key={review.url} review={review} />)}
             </ul>
-          )}
-
-          <button type="button" onClick={() => setMethod(!method)} aria-expanded={method} className="mt-8 flex items-center gap-1.5 text-sm font-medium text-ink underline decoration-[var(--rule)] decoration-2 underline-offset-4 hover:decoration-ink">
-            <ChevronDown size={16} className={`transition-transform ${method ? 'rotate-180' : ''}`} />
-            Comment ce résultat est calculé
-          </button>
-          {method && <p className="mt-3 max-w-2xl text-sm leading-7 text-ink-soft">{result.explanation}</p>}
-        </div>
+          </div>
+        )}
       </div>
 
-      <ShareRow result={result} claim={claim} />
+      {!loading && result && result.status !== 'error' && <ShareRow claim={claim} result={result} />}
     </section>
   )
 }
 
-function ShareRow({ result, claim }: { result: FactCheckResult; claim: string }) {
+function ShareRow({ claim, result }: { claim: string; result: Extract<FactCheckSearchResult, { status: 'found' | 'none' }> }) {
   const [copied, setCopied] = useState(false)
-  const verdict = VERDICTS[result.verdict]
+  const summary = result.status === 'found'
+    ? `${result.reviews.length} vérification${result.reviews.length > 1 ? 's' : ''} publiée${result.reviews.length > 1 ? 's' : ''}`
+    : VERDICTS.undetermined.label
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href)
@@ -165,7 +113,7 @@ function ShareRow({ result, claim }: { result: FactCheckResult; claim: string })
       <div className="min-w-0">
         <h3 className="font-display text-lg font-semibold text-ink">Partager ce résultat</h3>
         <p className="mt-1 truncate text-sm text-ink-soft">
-          <span className="font-semibold" style={{ color: verdict.color }}>{verdict.label}</span> : &laquo;&nbsp;{claim}&nbsp;&raquo;
+          <span className="font-semibold text-ink">{summary}</span> : &laquo;&nbsp;{claim}&nbsp;&raquo;
         </p>
       </div>
       <Button variant="outline" onClick={copyLink} className="shrink-0 border-ink bg-transparent text-ink hover:bg-ink hover:text-[var(--sheet)]">
