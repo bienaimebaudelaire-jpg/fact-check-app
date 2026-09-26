@@ -87,7 +87,7 @@ export function Results({ result, evidence, claim }: { result: FactCheckResult; 
                       {item.detail && <p className="mt-1 max-w-xs text-xs font-normal leading-relaxed text-ink-soft">{item.detail}</p>}
                     </td>
                     <td className="px-5 py-4 align-top text-ink-soft">{formatLevel(item.sourceLevel)}</td>
-                    <td className={`px-5 py-4 align-top font-medium ${item.stance === 'contradicts' ? 'text-[var(--false)]' : 'text-[var(--verified)]'}`}>{formatStance(item.stance)}</td>
+                    <td className={`px-5 py-4 align-top font-medium ${item.stance === 'contradicts' ? 'text-[var(--false)]' : item.stance === 'supports' ? 'text-[var(--verified)]' : 'text-ink-soft'}`}>{formatStance(item.stance)}</td>
                     <td className={`px-5 py-4 tabular-nums align-top font-medium ${item.direction === 'baisse' ? 'text-[var(--false)]' : item.direction === 'hausse' ? 'text-[var(--verified)]' : 'text-ink-soft'}`}>{item.direction === 'neutre' ? 'Neutre' : `${item.direction === 'hausse' ? '+' : ''}${item.impact}`}</td>
                     <td className="px-5 py-4 align-top tabular-nums text-ink-soft">{item.dateChecked}</td>
                   </tr>
@@ -141,7 +141,7 @@ function ShareCard({ result, claim }: { result: FactCheckResult; claim: string }
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-[#a9781f]">{result.confidenceScore}%</p>
               </div>
             </div>
-            <p className="mt-5 text-xs text-ink-soft">fact-check.app &middot; Voir l&rsquo;analyse complète <ExternalLink className="ml-1 inline" size={12} /></p>
+            <p className="mt-5 text-xs text-ink-soft">{typeof window !== 'undefined' ? window.location.host : ''} &middot; Voir l&rsquo;analyse complète <ExternalLink className="ml-1 inline" size={12} /></p>
           </div>
         </div>
       </div>

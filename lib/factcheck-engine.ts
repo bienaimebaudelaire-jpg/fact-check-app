@@ -85,12 +85,14 @@ export function analyzeClaim(claim: string, evidence: Evidence[]): FactCheckResu
   const concreteDetails = usable
     .filter((item) => item.stance !== 'neutral' && item.detail)
     .sort((a, b) => sourceWeight[b.sourceLevel] - sourceWeight[a.sourceLevel])
-    .map((item) => `${item.sourceName} : ${item.detail}`)
+    .map((item) => `${item.sourceName} : ${item.detail?.replace(/\.+$/, '')}`)
   const detailText = concreteDetails.length
     ? ` Éléments concrets retenus — ${concreteDetails.slice(0, 3).join(' | ')}.`
     : ' Aucun élément technique ou circonstanciel détaillé n’a été renseigné pour ces sources : traiter ce score comme provisoire tant que ce détail manque.'
   const explanation = verdict === 'undetermined'
-    ? `L’analyse reste prudente : ${sourceWord} de niveau 1 à 3 ne suffisent pas ou se contredisent au même niveau.`
+    ? independentCount < 2
+      ? `L’analyse reste prudente : ${independentCount === 0 ? 'aucune source exploitable (niveaux 1 à 4)' : 'une seule source indépendante exploitable'}, il en faut au moins deux pour conclure.`
+      : `L’analyse reste prudente : des sources de même niveau se contredisent.`
     : `Le score de fiabilité reflète l’accord pondéré de ${sourceWord}, en donnant davantage de poids aux sources primaires et récentes.${detailText}`
   const keywords = [...new Set(claim.toLowerCase().match(/[a-zàâçéèêëîïôûùüÿñæœ]{5,}/gi) ?? [])].slice(0, 5)
   return { reliabilityScore, confidenceScore, verdict, explanation, keywords: keywords.length ? keywords : ['sources', 'contexte', 'vérification'], breakdown }
