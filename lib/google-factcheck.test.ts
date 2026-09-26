@@ -135,6 +135,12 @@ describe('searchFactChecks', () => {
     expect(network.status).toBe('error')
   })
 
+  it('traite une réponse 200 illisible comme une erreur, pas comme une absence de résultat', async () => {
+    const garbled = new Response('<html>oops', { status: 200 })
+    const result = await searchFactChecks('q', { apiKey: KEY, fetch: vi.fn().mockResolvedValue(garbled) })
+    expect(result.status).toBe('error')
+  })
+
   it('ne laisse jamais la clé apparaître dans un message d’erreur', async () => {
     const result = await searchFactChecks('q', { apiKey: 'SECRET-123', fetch: vi.fn().mockRejectedValue(new Error('failed https://x?key=SECRET-123')) })
     expect(JSON.stringify(result)).not.toContain('SECRET-123')

@@ -131,7 +131,13 @@ export async function searchFactChecks(
       : 'Le service de vérification a refusé la demande.'
     return { status: 'error', message }
   }
-  const body = (await response.json().catch(() => ({}))) as { claims?: ApiClaim[] }
-  const reviews = normalizeReviews(body.claims ?? [])
+  let body: { claims?: ApiClaim[] }
+  try {
+    body = (await response.json()) as { claims?: ApiClaim[] }
+  } catch {
+    // Réponse illisible : on ne sait pas s'il y a des résultats, ce n'est donc pas « aucun résultat ».
+    return { status: 'error', message: 'Le service de vérification a renvoyé une réponse illisible.' }
+  }
+  const reviews = normalizeReviews(body?.claims ?? [])
   return reviews.length ? { status: 'found', reviews } : { status: 'none' }
 }
