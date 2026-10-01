@@ -38,6 +38,7 @@ export default function Home() {
   useEffect(() => {
     const shared = new URLSearchParams(window.location.search).get('q')?.trim()
     if (!shared) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- rejoue volontairement l'analyse depuis l'URL partagée à l'ouverture
     setClaim(shared)
     analyze(shared, false)
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -32,3 +32,14 @@ Portée actuelle : lecture/recherche locale de démo uniquement. Le verdict fina
 npm install
 npm run dev
 ```
+
+### Vérifications avant de proposer un changement
+
+```bash
+npm run lint
+npm run test
+npm run build
+```
+
+Voir [CONTRIBUTING.md](./CONTRIBUTING.md) pour le guide de contribution et
+[SECURITY.md](./SECURITY.md) pour signaler une vulnérabilité.
