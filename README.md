@@ -18,12 +18,33 @@ Remplacer les tableaux d'`evidence` mockés par un vrai pipeline de recherche de
 Une couche locale de préparation est disponible dans `lib/automaton-prep.ts` :
 
 - **Prépare** une proposition de vérification (`prepareFactCheckProposal`) ;
+- **Permet ensuite** de remplacer explicitement les preuves de démo par des preuves collectées via connecteur (`attachConnectorEvidence`) ;
 - **N'accorde jamais** l'autorité finale au modèle (`finalVerdictAuthority: 'human_only'`) ;
 - **Marque explicitement** les preuves de démonstration comme mockées (`mocked: true`) ;
 - **Signale** les champs nécessitant un connecteur réel (`sourceUrl`, `retrievalTraceId`, `retrievedByConnector`) ;
-- **Bloque** toute publication tant qu'une validation humaine n'est pas approuvée (`preparePublishableFactCheck`).
+- **Bloque** toute publication tant qu'une validation humaine explicite et des preuves réelles non mockées ne sont pas disponibles (`preparePublishableFactCheck`).
 
 Portée actuelle : lecture/recherche locale de démo uniquement. Le verdict final et la publication restent soumis à approbation humaine explicite.
+
+## Recherche en direct : Google Fact Check Tools
+
+L'interface n'utilise plus de sources simulées. Chaque phrase est envoyée à `app/api/verifier/route.ts`,
+qui interroge l'API Google Fact Check Tools (`claims:search`, `languageCode=fr` uniquement) côté serveur.
+
+- Seules les vérifications des **médias publics français** listés dans `OFFICIAL_PUBLISHERS`
+  (`lib/google-factcheck.ts`) sont retenues.
+- Le verdict du média (`textualRating`) est affiché **tel quel**, avec son nom, sa date et le lien,
+  à côté de l'affirmation qu'il a réellement vérifiée. Aucun verdict global n'est calculé.
+- Aucun résultat retenu : « Impossible à déterminer ». Panne ou quota : « Vérification indisponible »
+  (ce n'est pas un verdict).
+- Le moteur à 7 verdicts (`lib/factcheck-engine.ts`) et `lib/automaton-prep.ts` restent en place,
+  mais l'interface ne les utilise plus.
+
+### Configuration
+
+Variable d'environnement **`GOOGLE_FACT_CHECK_API_KEY`** (voir `.env.example`) :
+en local dans `.env.local`, sur Vercel dans Settings > Environment Variables (Production et Preview).
+Sans clé, le site affiche « La vérification n'est pas encore configurée sur ce site ».
 
 ## Démarrer en local
 

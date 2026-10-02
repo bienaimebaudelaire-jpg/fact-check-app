@@ -56,6 +56,9 @@ body {
 }
 
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+/* Le champ citation a déjà son propre état de focus (filet et guillemets à l'encre) :
+   pas de cadre rectangulaire par-dessus. */
+.quote-frame textarea:focus-visible { outline: none; }
 
 @theme inline {
   --color-paper: var(--paper);

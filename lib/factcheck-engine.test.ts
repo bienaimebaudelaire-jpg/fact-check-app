@@ -81,3 +81,20 @@ describe('analyzeClaim — verdicts attendus des 4 exemples', () => {
     expect(result.verdict).toBe('undetermined')
   })
 })
+
+describe('explanation text', () => {
+  it('does not end a sentence with a doubled period when a detail already ends with one', () => {
+    const claim = demoClaimExamples.find((e) => e.text.includes('Lune'))!.text
+    const { explanation } = analyzeClaim(claim, evidenceForClaim(claim))
+    expect(explanation).not.toMatch(/\.\./)
+  })
+
+  it('reads grammatically for a single usable source in the undetermined case', () => {
+    const { verdict, explanation } = analyzeClaim('x', [
+      { sourceName: 'Seule source', sourceLevel: 1, stance: 'supports', dateChecked: '2026-01-01' },
+    ])
+    expect(verdict).toBe('undetermined')
+    expect(explanation).toContain('une seule source indépendante')
+    expect(explanation).not.toMatch(/source indépendante de niveau 1 à 3 ne suffisent/)
+  })
+})

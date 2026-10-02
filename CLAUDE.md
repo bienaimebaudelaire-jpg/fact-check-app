@@ -36,3 +36,15 @@ ponctuation retires) contre les 4 exemples de demonstration definis dans
 `lib/factcheck-engine.ts` (`demoClaimExamples`, source unique reutilisee par `app/page.tsx`).
 Toute autre saisie ne declenche plus `analyzeClaim` du tout : voir l'etat « Demo » dans
 `app/page.tsx`. Ne jamais revenir a un matching par sous-chaine ou mot-cle sur `claim`.
+
+## Recherche Google Fact Check (2026-09-26)
+
+- Un verdict d'un média porte sur **l'affirmation qu'il a vérifiée** (`reviewedClaim`), pas sur la phrase
+  saisie : `claims:search` est une recherche par mots-clés et renvoie des affirmations *proches*
+  (ex. « Les humains ont marché sur la Lune » ramène des articles notés « Faux » sur la théorie du canular).
+  Ne jamais tamponner la phrase de l'utilisateur avec un `textualRating`, ne jamais calculer de verdict
+  global à partir de ces notes, ne jamais traduire ou convertir `textualRating`.
+- Garder la distinction `none` (« Impossible à déterminer ») / `error` (panne, quota, clé absente).
+- La clé reste côté serveur (`GOOGLE_FACT_CHECK_API_KEY`, jamais `NEXT_PUBLIC_`), et ne doit apparaître
+  dans aucune réponse ni aucun message d'erreur (testé).
+- `route.ts` ne doit exporter que des handlers HTTP (Next refuse les autres exports) : constantes dans `lib/`.

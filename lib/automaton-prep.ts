@@ -19,10 +19,13 @@ export type AgentWarning = {
 
 export type EvidenceProvenance = {
   provider: 'local-demo-dataset' | 'external-connector'
-  retrievalMode: 'local_mock' | 'connector_required'
+  retrievalMode: 'local_mock' | 'connector_live' | 'connector_required'
   collectedAt: string
   connectorConfigured: boolean
   note: string
+  sourceUrl?: string
+  retrievalTraceId?: string
+  retrievedByConnector?: string
 }
 
 export type PreparedEvidence = Evidence & {
@@ -58,7 +61,24 @@ export type FactCheckProposal = {
   validation: HumanValidationGate
 }
 
+export type ConnectorEvidenceInput = Evidence & {
+  sourceUrl: string
+  retrievalTraceId: string
+  retrievedByConnector: string
+}
+
 const CONNECTOR_REQUIRED_FIELDS = ['sourceUrl', 'retrievalTraceId', 'retrievedByConnector'] as const
+
+function hasConnectorRequirement(proposal: FactCheckProposal): boolean {
+  return proposal.warnings.some((warning) => warning.code === 'CONNECTOR_REQUIRED')
+}
+
+function hasMockEvidence(proposal: FactCheckProposal): boolean {
+  return (
+    proposal.warnings.some((warning) => warning.code === 'MOCK_EVIDENCE') ||
+    proposal.evidence.some((item) => item.mocked || item.provenance.retrievalMode === 'local_mock')
+  )
+}
 
 export function prepareFactCheckProposal(
   request: FactCheckAgentRequest,
@@ -125,16 +145,69 @@ export function prepareFactCheckProposal(
 }
 
 export function approveProposal(proposal: FactCheckProposal, approver: string, approvedAt?: string): FactCheckProposal {
+  if (proposal.validation.status === 'rejected') {
+    throw new Error('Approbation interdite : la proposition rejetée doit être reconstruite ou réhydratée avant réexamen.')
+  }
+  if (proposal.validation.status === 'approved') {
+    throw new Error('Approbation interdite : la proposition est déjà approuvée et doit être réinitialisée avant tout nouvel examen.')
+  }
+
+  const connectorRequired = hasConnectorRequirement(proposal)
+  const mockEvidence = hasMockEvidence(proposal)
+
   return {
     ...proposal,
     publication: {
-      allowed: true,
-      reason: 'Validation humaine confirmée.',
+      allowed: !connectorRequired && !mockEvidence,
+      reason: connectorRequired
+        ? 'Validation humaine enregistrée, mais publication bloquée tant que les preuves requises ne sont pas collectées.'
+        : mockEvidence
+          ? 'Validation humaine enregistrée, mais publication bloquée tant que les preuves restent mockées.'
+        : 'Validation humaine confirmée.',
     },
     validation: {
       status: 'approved',
       approver,
       approvedAt: approvedAt ?? new Date().toISOString(),
+    },
+  }
+}
+
+export function attachConnectorEvidence(
+  proposal: FactCheckProposal,
+  evidence: ConnectorEvidenceInput[],
+  options?: { collectedAt?: string },
+): FactCheckProposal {
+  const collectedAt = options?.collectedAt ?? new Date().toISOString()
+  const preparedEvidence: PreparedEvidence[] = evidence.map(
+    ({ sourceUrl, retrievalTraceId, retrievedByConnector, ...item }) => ({
+      ...item,
+      mocked: false,
+      requiresConnectorFields: [...CONNECTOR_REQUIRED_FIELDS],
+      provenance: {
+        provider: 'external-connector',
+        retrievalMode: 'connector_live',
+        collectedAt,
+        connectorConfigured: true,
+        note: 'Preuve collectée via un connecteur réel.',
+        sourceUrl,
+        retrievalTraceId,
+        retrievedByConnector,
+      },
+    }),
+  )
+
+  return {
+    ...proposal,
+    evidence: preparedEvidence,
+    analysis: analyzeClaim(proposal.request.claim, preparedEvidence),
+    warnings: proposal.warnings.filter((warning) => warning.code !== 'MOCK_EVIDENCE' && warning.code !== 'CONNECTOR_REQUIRED'),
+    publication: {
+      allowed: false,
+      reason: 'Publication bloquée tant qu’une nouvelle validation humaine explicite n’a pas été donnée.',
+    },
+    validation: {
+      status: 'required',
     },
   }
 }
@@ -167,6 +240,10 @@ export type PublishableFactCheck = {
 export function preparePublishableFactCheck(proposal: FactCheckProposal): PublishableFactCheck {
   if (proposal.validation.status !== 'approved' || !proposal.validation.approver || !proposal.validation.approvedAt) {
     throw new Error('Publication interdite : validation humaine requise.')
+  }
+
+  if (!proposal.publication.allowed || hasConnectorRequirement(proposal) || hasMockEvidence(proposal) || proposal.evidence.length === 0) {
+    throw new Error('Publication interdite : preuves réelles exploitables requises avant publication.')
   }
 
   return {
