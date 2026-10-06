@@ -1,19 +1,78 @@
-# Copilot Instructions — fact-check-app
+<!-- Fichier généré automatiquement depuis AGENTS.md par .github/workflows/sync-agent-instructions.yml. Ne pas modifier : éditer AGENTS.md. -->
 
-Lire aussi tout fichier SPEC.md/CLAUDE.md present : il fait foi sur le produit.
+# AGENTS.md — fact-check-app
 
-## Veille avant toute suggestion technique
+Source unique des instructions pour les agents IA (Claude Code, GitHub Copilot, etc.).
+- `CLAUDE.md` contient seulement `@AGENTS.md` : Claude Code lit ce fichier.
+- `.github/copilot-instructions.md` est généré automatiquement depuis ce fichier : ne pas le modifier à la main.
+
+## Règles communes
+
+### Veille avant toute suggestion technique
 Avant de proposer une librairie, un framework, une version ou une approche :
-1. Verifier qu'elle n'est pas obsolete ou depreciee (changelog recent, derniere mise a jour).
-2. Verifier qu'elle est parmi les choix les plus utilises/eprouves pour ce cas d'usage (pas juste la premiere connue).
-3. Signaler explicitement si une alternative plus recente ou plus performante existe, meme si ce n'est pas ce qui est demande.
+1. Vérifier qu'elle n'est pas obsolète ou dépréciée (changelog récent, dernière mise à jour).
+2. Vérifier qu'elle est parmi les choix les plus utilisés/éprouvés pour ce cas d'usage (pas juste la première connue).
+3. Signaler explicitement si une alternative plus récente ou plus performante existe, même si ce n'est pas ce qui est demandé.
 4. Ne jamais inventer une donnee, un prix, une statistique ou une source : verifier ou dire qu'on ne sait pas.
 
-## Avant de livrer du code
-- Se relire une fois pour la logique, une fois pour les erreurs/failles evidentes (secrets en dur, entrees non validees, valeurs par defaut trompeuses).
-- Optimiser pour : ergonomie/intuitivite, performance raisonnable, cout d'infrastructure maitrise.
-- Rester dans le perimetre demande : proposer un elargissement en option, jamais l'imposer.
+### Avant de livrer du code
+- Se relire une fois pour la logique, une fois pour les erreurs/failles évidentes (secrets en dur, entrées non validées, valeurs par défaut trompeuses).
+- Optimiser pour : ergonomie/intuitivité, performance raisonnable, coût d'infrastructure maîtrisé.
+- Rester dans le périmètre demandé : proposer un élargissement en option, jamais l'imposer.
 
-## Style
-- Reponses et commentaires de code en francais si le repo est en francais, code en anglais.
-- Etre direct sur les limites ou risques d'un choix, ne jamais les cacher pour "faire plaisir".
+### Style
+- Réponses et commentaires de code en français si le repo est en français, code en anglais.
+- Être direct sur les limites ou risques d'un choix, ne jamais les cacher pour « faire plaisir ».
+
+## Spécifique au projet
+
+Lire aussi tout fichier `SPEC.md` présent : il fait foi sur le produit.
+
+Notes de discipline pour toute future session de code sur ce repo (inspire des remarques d'Andrej Karpathy sur les erreurs frequentes des LLM en code).
+
+### Erreurs deja rencontrees ici — ne pas repeter
+
+1. **Composants manquants** : le premier scaffold v0 referencait `@/components/ui/button` et `@/components/ui/textarea` sans les inclure. Toujours verifier que chaque import `@/...` a un fichier reel avant de commit.
+2. **Inference de type trop large** : un objet construit dans un `.map()` avec un champ `direction: impact > 0 ? 'hausse' : ...` s'infere en `string`, pas en union litterale. Caster explicitement (`as 'hausse' | 'baisse' | 'neutre'`) quand le type de retour est plus etroit que ce que TypeScript infere seul.
+3. **Versions Tailwind v4** : `tailwindcss` et `@tailwindcss/postcss` doivent etre alignes sur la meme mineure (bug connu de desync sur 4.0.0 -> `ScannerOptions.negated`). Utiliser `^4.2.0` pour les deux, jamais figer `4.0.0` en dur.
+
+### Principes a garder
+
+- Ne jamais fabriquer un score, un verdict ou une source qui n'a pas d'element concret derriere (voir `lib/factcheck-engine.ts`, regle `undetermined` explicite).
+- Un changement de design ou de logique = build local (`npm run build`) avant de pousser, quand c'est possible, plutot que de compter sur le build Vercel pour attraper les erreurs de type.
+- Garder les deux jauges (fiabilite / confiance) toujours separees, jamais fusionnees en un seul chiffre.
+
+
+### Revue de code du 2026-09-20 (corrigee le 2026-09-22, voir issue #1)
+
+Quand toutes les sources d'une affirmation sont niveau 5 (non verifiables) ou qu'il n'y a
+aucune source, `reliabilityScore` retombe a 50 par defaut (neutre mathematique), alors meme
+que le verdict est `undetermined`. La jauge de fiabilite est maintenant masquee (pas juste
+expliquee) quand `result.verdict === 'undetermined'`, dans `components/fact-check-results.tsx`
+(carte de resultat et carte de partage) : ne pas reintroduire un affichage de pourcentage brut
+dans ce cas.
+
+### Revue de code du 2026-09-22 (corrigee, voir issue #1)
+
+`evidenceForClaim()` matchait par sous-chaine (`claim.includes(candidate)`), ce qui rattachait
+des preuves fixes a n'importe quel texte contenant un mot-cle — y compris une negation
+(« Les humains n'ont jamais marche sur la Lune » recevait les preuves qui *soutiennent*
+l'alunissage) ou un sujet hors-sujet contenant le mot « vaccin ». La cle `'éoliennes'` accentuee
+ne matchait jamais le texte d'exemple non accentue de `app/page.tsx`. Corrige par une
+correspondance **exacte** apres normalisation (`normalizeClaim` : NFD, minuscules, accents et
+ponctuation retires) contre les 4 exemples de demonstration definis dans
+`lib/factcheck-engine.ts` (`demoClaimExamples`, source unique reutilisee par `app/page.tsx`).
+Toute autre saisie ne declenche plus `analyzeClaim` du tout : voir l'etat « Demo » dans
+`app/page.tsx`. Ne jamais revenir a un matching par sous-chaine ou mot-cle sur `claim`.
+
+### Recherche Google Fact Check (2026-09-26)
+
+- Un verdict d'un média porte sur **l'affirmation qu'il a vérifiée** (`reviewedClaim`), pas sur la phrase
+  saisie : `claims:search` est une recherche par mots-clés et renvoie des affirmations *proches*
+  (ex. « Les humains ont marché sur la Lune » ramène des articles notés « Faux » sur la théorie du canular).
+  Ne jamais tamponner la phrase de l'utilisateur avec un `textualRating`, ne jamais calculer de verdict
+  global à partir de ces notes, ne jamais traduire ou convertir `textualRating`.
+- Garder la distinction `none` (« Impossible à déterminer ») / `error` (panne, quota, clé absente).
+- La clé reste côté serveur (`GOOGLE_FACT_CHECK_API_KEY`, jamais `NEXT_PUBLIC_`), et ne doit apparaître
+  dans aucune réponse ni aucun message d'erreur (testé).
+- `route.ts` ne doit exporter que des handlers HTTP (Next refuse les autres exports) : constantes dans `lib/`.
