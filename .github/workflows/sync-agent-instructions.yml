@@ -1,0 +1,31 @@
+name: Sync Copilot instructions
+
+on:
+  push:
+    branches: [main]
+    paths: [AGENTS.md]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Générer .github/copilot-instructions.md depuis AGENTS.md
+        run: |
+          mkdir -p .github
+          {
+            printf '%s\n\n' '<!-- Fichier généré automatiquement depuis AGENTS.md par .github/workflows/sync-agent-instructions.yml. Ne pas modifier : éditer AGENTS.md. -->'
+            cat AGENTS.md
+          } > .github/copilot-instructions.md
+          if [ -z "$(git status --porcelain .github/copilot-instructions.md)" ]; then
+            echo "Déjà à jour."; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add .github/copilot-instructions.md
+          git commit -m "chore: régénère copilot-instructions.md depuis AGENTS.md"
+          git push
