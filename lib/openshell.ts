@@ -11,9 +11,16 @@ export const OPENSHELL_DEFAULT_TIMEOUT_MS = 30_000
 
 const SAFE_TOKEN = /^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$/
 const SAFE_MEMORY = /^[1-9][0-9]{0,5}(Mi|Gi)$/
+// OpenShell sandbox names are lowercase DNS-1123 labels (max 63 chars).
+const SANDBOX_NAME = /^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$/
 
 function token(label: string, value: string): string {
-  if (!SAFE_TOKEN.test(value)) throw new Error(`OpenShell: invalid ${label}`)
+  if (typeof value !== 'string' || !SAFE_TOKEN.test(value)) throw new Error(`OpenShell: invalid ${label}`)
+  return value
+}
+
+function sandboxName(value: string): string {
+  if (typeof value !== 'string' || !SANDBOX_NAME.test(value)) throw new Error('OpenShell: invalid sandbox name')
   return value
 }
 
@@ -23,11 +30,11 @@ export function buildOpenShellArgs(cmd: OpenShellCommand): string[] {
     case 'sandbox-list':
       return ['sandbox', 'list']
     case 'sandbox-delete':
-      return ['sandbox', 'delete', token('sandbox name', cmd.name)]
+      return ['sandbox', 'delete', sandboxName(cmd.name)]
     case 'sandbox-create': {
       const args = ['sandbox', 'create']
       if (cmd.from !== undefined) args.push('--from', token('image', cmd.from))
-      if (cmd.name !== undefined) args.push('--name', token('sandbox name', cmd.name))
+      if (cmd.name !== undefined) args.push('--name', sandboxName(cmd.name))
       if (cmd.cpu !== undefined) {
         if (!Number.isInteger(cmd.cpu) || cmd.cpu < 1 || cmd.cpu > 64) throw new Error('OpenShell: invalid cpu')
         args.push('--cpu', String(cmd.cpu))
@@ -39,8 +46,12 @@ export function buildOpenShellArgs(cmd: OpenShellCommand): string[] {
       return args
     }
     case 'sandbox-exec': {
-      if (cmd.command.length === 0) throw new Error('OpenShell: empty command')
-      return ['exec', token('sandbox name', cmd.name), '--', ...cmd.command]
+      if (!Array.isArray(cmd.command) || cmd.command.length === 0) throw new Error('OpenShell: empty command')
+      if (cmd.command.some((arg) => typeof arg !== 'string' || arg.includes('\0'))) {
+        throw new Error('OpenShell: invalid command argument')
+      }
+      // Documented syntax: `openshell sandbox exec --name <name> -- <command...>`.
+      return ['sandbox', 'exec', '--name', sandboxName(cmd.name), '--', ...cmd.command]
     }
   }
 }
