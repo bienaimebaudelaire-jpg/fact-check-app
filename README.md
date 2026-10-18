@@ -46,6 +46,15 @@ Variable d'environnement **`GOOGLE_FACT_CHECK_API_KEY`** (voir `.env.example`) :
 en local dans `.env.local`, sur Vercel dans Settings > Environment Variables (Production et Preview).
 Sans clé, le site affiche « La vérification n'est pas encore configurée sur ce site ».
 
+## Utilisateurs synthétiques et mémoire d'apprentissage
+
+`lib/learning-memory.ts` (en mémoire, sans base externe) sépare strictement `real | synthetic | test` :
+utilisateurs, sessions (le mode doit correspondre au type d'utilisateur), événements, éléments de mémoire
+(avec provenance et confiance) et évaluations. La mémoire n'est dérivée que de retours explicites
+(feedback / correction) ; `retrieveMemory` ne renvoie que le réel par défaut ; `evaluateScenario` refuse
+l'origine `real` ; `realTrafficMetrics` ignore tout trafic non réel. Un agent simulé n'est jamais présenté
+comme un humain (`originLabel`).
+
 ## Démarrer en local
 
 ```bash
