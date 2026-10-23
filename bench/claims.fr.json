@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "note": "Aucun verdict de référence : l'app n'en calcule pas. expect vaut 'unknown' quand rien ne permet de savoir à l'avance ce que Google renvoie (la première exécution sert de référence), 'none' pour un témoin négatif (affirmation que les médias ne vérifient pas : un found est à examiner, pas forcément une erreur).",
+  "claims": [
+    { "id": "topic-vaccin-adn", "category": "topical", "expect": "unknown", "text": "Les vaccins contre le Covid-19 modifient l'ADN" },
+    { "id": "topic-climat", "category": "topical", "expect": "unknown", "text": "Le réchauffement climatique est causé par l'activité humaine" },
+    { "id": "topic-eoliennes-chats", "category": "topical", "expect": "unknown", "text": "Les éoliennes tuent plus d'oiseaux que les chats" },
+    { "id": "topic-terre-plate", "category": "topical", "expect": "unknown", "text": "La Terre est plate" },
+    { "id": "topic-nucleaire-co2", "category": "topical", "expect": "unknown", "text": "Le nucléaire émet beaucoup de CO2" },
+    { "id": "topic-chemtrails", "category": "topical", "expect": "unknown", "text": "Les traînées des avions sont des produits chimiques épandus volontairement" },
+    { "id": "topic-vote-correspondance", "category": "topical", "expect": "unknown", "text": "Le vote par correspondance favorise la fraude électorale" },
+    { "id": "topic-5g", "category": "topical", "expect": "unknown", "text": "La 5G est dangereuse pour la santé" },
+
+    { "id": "para-lune-phrase", "category": "paraphrase", "group": "lune", "expect": "unknown", "text": "Les humains ont marché sur la Lune" },
+    { "id": "para-lune-question", "category": "paraphrase", "group": "lune", "expect": "unknown", "text": "A-t-on vraiment marché sur la Lune ?" },
+    { "id": "para-lune-mots", "category": "paraphrase", "group": "lune", "expect": "unknown", "text": "alunissage Apollo canular" },
+
+    { "id": "para-arn-phrase", "category": "paraphrase", "group": "vaccin-arn", "expect": "unknown", "text": "Les vaccins à ARN messager modifient notre ADN" },
+    { "id": "para-arn-question", "category": "paraphrase", "group": "vaccin-arn", "expect": "unknown", "text": "Les vaccins ARN messager changent-ils l'ADN ?" },
+    { "id": "para-arn-mots", "category": "paraphrase", "group": "vaccin-arn", "expect": "unknown", "text": "vaccin ARN messager ADN" },
+
+    { "id": "para-eolien-phrase", "category": "paraphrase", "group": "eoliennes-oiseaux", "expect": "unknown", "text": "Les éoliennes tuent des oiseaux" },
+    { "id": "para-eolien-question", "category": "paraphrase", "group": "eoliennes-oiseaux", "expect": "unknown", "text": "Est-il vrai que les éoliennes tuent beaucoup d'oiseaux ?" },
+    { "id": "para-eolien-mots", "category": "paraphrase", "group": "eoliennes-oiseaux", "expect": "unknown", "text": "éoliennes mortalité oiseaux" },
+
+    { "id": "control-voiture", "category": "control", "expect": "none", "text": "Mon voisin a une voiture rouge" },
+    { "id": "control-meteo", "category": "control", "expect": "none", "text": "Il pleuvra demain à Lyon" },
+    { "id": "control-cafe", "category": "control", "expect": "none", "text": "Le café de ma cuisine est meilleur que celui du bureau" },
+    { "id": "control-rdv", "category": "control", "expect": "none", "text": "Ma réunion de jeudi dure deux heures" },
+
+    { "id": "gibberish-1", "category": "gibberish", "expect": "none", "text": "zxqv wprt lmnb kjhg" },
+    { "id": "gibberish-2", "category": "gibberish", "expect": "none", "text": "qqqq xzxz wvwv" }
+  ]
+}

@@ -55,6 +55,22 @@ utilisateurs, sessions (le mode doit correspondre au type d'utilisateur), évén
 l'origine `real` ; `realTrafficMetrics` ignore tout trafic non réel. Un agent simulé n'est jamais présenté
 comme un humain (`originLabel`).
 
+## Banc de test de `/api/verifier`
+
+`npm run bench` envoie un jeu d'affirmations (`bench/claims.fr.json`, 23 + 2 saisies invalides) à l'app
+(`http://localhost:3000` par défaut, `--base <url>` pour une app déployée) et mesure :
+
+- la couverture par catégorie (`found` / `none` / `error`) ;
+- la pertinence **lexicale** des vérifications renvoyées (part des mots de la saisie retrouvés dans
+  l'affirmation que le média a vérifiée : un proxy, pas un jugement de justesse) ;
+- la stabilité face aux reformulations d'une même affirmation ;
+- avec `--baseline <résultats.json>` (et `--strict` pour un code de sortie 1), les régressions entre deux exécutions.
+
+Il ne mesure pas « le bon verdict » : l'app n'en calcule pas (voir `CLAUDE.md`). Aucune clé n'est nécessaire côté
+banc, la clé Google reste côté serveur de l'app testée. Les résultats vont dans `bench/results/` (ignoré par git).
+Un paramètre `_bench` est ajouté aux requêtes pour contourner le cache (`s-maxage=3600`) d'une app déployée.
+Le calcul des mesures est testé par `npm test` (`bench/metrics.test.mjs`).
+
 ## Démarrer en local
 
 ```bash
